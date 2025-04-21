@@ -1,0 +1,745 @@
+import { UserProfile } from '../types/profile';
+
+// Generate 30 demo users with varied profiles
+export const demoUsers: UserProfile[] = [
+  {
+    id: '00000000-0000-0000-0000-000000000001',
+    username: 'adventure_alex',
+    full_name: 'Alex Johnson',
+    avatar_url: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=facearea&facepad=2&w=150&h=150&q=80',
+    email: 'alex@example.com',
+    location: 'Denver, Colorado',
+    age: 28,
+    gender: 'female',
+    interests: ['Adventure', 'Hiking', 'Photography'],
+    hobbies: ['Rock climbing', 'Trail running'],
+    profile_bio: 'Always seeking the next adventure! Summited 12 peaks and counting. Love capturing the beauty of nature through my lens.',
+    privacy_default: 'public',
+    created_at: '2023-01-15T12:00:00Z',
+    updated_at: '2023-01-15T12:00:00Z',
+    onboarding_completed: true,
+    quiz_completed: true,
+    is_admin: false,
+    follower_count: 245,
+    following_count: 187
+  },
+  {
+    id: '00000000-0000-0000-0000-000000000002',
+    username: 'tech_tim',
+    full_name: 'Timothy Chen',
+    avatar_url: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=facearea&facepad=2&w=150&h=150&q=80',
+    email: 'tim@example.com',
+    location: 'San Francisco, CA',
+    age: 32,
+    gender: 'male',
+    interests: ['Tech', 'Coding', 'Innovation'],
+    hobbies: ['Building apps', 'AI experiments'],
+    profile_bio: 'Software engineer by day, tech explorer by night. Working on my bucket list of launching 5 apps that help people.',
+    privacy_default: 'friends',
+    created_at: '2023-02-20T12:00:00Z',
+    updated_at: '2023-02-20T12:00:00Z',
+    onboarding_completed: true,
+    quiz_completed: true,
+    is_admin: false,
+    follower_count: 178,
+    following_count: 92
+  },
+  {
+    id: '00000000-0000-0000-0000-000000000003',
+    username: 'yoga_yara',
+    full_name: 'Yara Singh',
+    avatar_url: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?auto=format&fit=facearea&facepad=2&w=150&h=150&q=80',
+    email: 'yara@example.com',
+    location: 'Bali, Indonesia',
+    age: 29,
+    gender: 'female',
+    interests: ['Yoga', 'Meditation', 'Travel'],
+    hobbies: ['Beach yoga', 'Journaling'],
+    profile_bio: 'Yoga instructor and digital nomad. Completed my 200-hour teacher training in Rishikesh. Helping others find their inner peace.',
+    privacy_default: 'public',
+    created_at: '2023-03-10T12:00:00Z',
+    updated_at: '2023-03-10T12:00:00Z',
+    onboarding_completed: true,
+    quiz_completed: true,
+    is_admin: false,
+    follower_count: 512,
+    following_count: 235
+  },
+  {
+    id: '00000000-0000-0000-0000-000000000004',
+    username: 'chef_carlos',
+    full_name: 'Carlos Rodriguez',
+    avatar_url: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=facearea&facepad=2&w=150&h=150&q=80',
+    email: 'carlos@example.com',
+    location: 'Barcelona, Spain',
+    age: 35,
+    gender: 'male',
+    interests: ['Cooking', 'Food', 'Culture'],
+    hobbies: ['Farmers markets', 'Wine tasting'],
+    profile_bio: 'Culinary explorer on a mission to master cuisines from 42 countries. Currently at 18 and counting!',
+    privacy_default: 'public',
+    created_at: '2023-04-05T12:00:00Z',
+    updated_at: '2023-04-05T12:00:00Z',
+    onboarding_completed: true,
+    quiz_completed: true,
+    is_admin: false,
+    follower_count: 342,
+    following_count: 156
+  },
+  {
+    id: '00000000-0000-0000-0000-000000000005',
+    username: 'music_maya',
+    full_name: 'Maya Williams',
+    avatar_url: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=facearea&facepad=2&w=150&h=150&q=80',
+    email: 'maya@example.com',
+    location: 'Nashville, TN',
+    age: 26,
+    gender: 'female',
+    interests: ['Music', 'Singing', 'Songwriting'],
+    hobbies: ['Guitar', 'Piano'],
+    profile_bio: 'Singer-songwriter working on performing at 42 different venues. So far I've checked off 15!',
+    privacy_default: 'private',
+    created_at: '2023-05-12T12:00:00Z',
+    updated_at: '2023-05-12T12:00:00Z',
+    onboarding_completed: true,
+    quiz_completed: true,
+    is_admin: false,
+    follower_count: 189,
+    following_count: 204
+  },
+  {
+    id: '00000000-0000-0000-0000-000000000006',
+    username: 'runner_ryan',
+    full_name: 'Ryan Cooper',
+    avatar_url: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=facearea&facepad=2&w=150&h=150&q=80',
+    email: 'ryan@example.com',
+    location: 'Boston, MA',
+    age: 31,
+    gender: 'male',
+    interests: ['Running', 'Fitness', 'Marathons'],
+    hobbies: ['Trail running', 'Coaching'],
+    profile_bio: 'Marathon runner with a goal to complete all six World Marathon Majors. 4 down, 2 to go!',
+    privacy_default: 'public',
+    created_at: '2023-06-18T12:00:00Z',
+    updated_at: '2023-06-18T12:00:00Z',
+    onboarding_completed: true,
+    quiz_completed: true,
+    is_admin: false,
+    follower_count: 276,
+    following_count: 143
+  },
+  {
+    id: '00000000-0000-0000-0000-000000000007',
+    username: 'artist_amelia',
+    full_name: 'Amelia Garcia',
+    avatar_url: 'https://images.unsplash.com/photo-1531123897727-8f129e1688ce?auto=format&fit=facearea&facepad=2&w=150&h=150&q=80',
+    email: 'amelia@example.com',
+    location: 'Paris, France',
+    age: 27,
+    gender: 'female',
+    interests: ['Art', 'Painting', 'Museums'],
+    hobbies: ['Watercolor', 'Sketching'],
+    profile_bio: 'Artist exploring different mediums. Currently working on my goal to exhibit in 5 different countries.',
+    privacy_default: 'friends',
+    created_at: '2023-07-22T12:00:00Z',
+    updated_at: '2023-07-22T12:00:00Z',
+    onboarding_completed: true,
+    quiz_completed: true,
+    is_admin: false,
+    follower_count: 312,
+    following_count: 267
+  },
+  {
+    id: '00000000-0000-0000-0000-000000000008',
+    username: 'surfer_sam',
+    full_name: 'Sam Wilson',
+    avatar_url: 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?auto=format&fit=facearea&facepad=2&w=150&h=150&q=80',
+    email: 'sam@example.com',
+    location: 'Gold Coast, Australia',
+    age: 24,
+    gender: 'male',
+    interests: ['Surfing', 'Ocean', 'Beach'],
+    hobbies: ['Paddleboarding', 'Beach volleyball'],
+    profile_bio: 'Catching waves across the world. Goal: surf in 42 different spots. Currently at 17!',
+    privacy_default: 'public',
+    created_at: '2023-08-05T12:00:00Z',
+    updated_at: '2023-08-05T12:00:00Z',
+    onboarding_completed: true,
+    quiz_completed: true,
+    is_admin: false,
+    follower_count: 423,
+    following_count: 198
+  },
+  {
+    id: '00000000-0000-0000-0000-000000000009',
+    username: 'bookworm_bella',
+    full_name: 'Bella Kim',
+    avatar_url: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=facearea&facepad=2&w=150&h=150&q=80',
+    email: 'bella@example.com',
+    location: 'London, UK',
+    age: 30,
+    gender: 'female',
+    interests: ['Reading', 'Writing', 'Literature'],
+    hobbies: ['Book clubs', 'Poetry'],
+    profile_bio: 'Bibliophile with a goal to read 42 classics before turning 35. Currently on book 28!',
+    privacy_default: 'private',
+    created_at: '2023-09-14T12:00:00Z',
+    updated_at: '2023-09-14T12:00:00Z',
+    onboarding_completed: true,
+    quiz_completed: true,
+    is_admin: false,
+    follower_count: 156,
+    following_count: 203
+  },
+  {
+    id: '00000000-0000-0000-0000-000000000010',
+    username: 'hiker_henry',
+    full_name: 'Henry Zhang',
+    avatar_url: 'https://images.unsplash.com/photo-1552058544-f2b08422138a?auto=format&fit=facearea&facepad=2&w=150&h=150&q=80',
+    email: 'henry@example.com',
+    location: 'Seattle, WA',
+    age: 33,
+    gender: 'male',
+    interests: ['Hiking', 'Nature', 'Photography'],
+    hobbies: ['Birdwatching', 'Camping'],
+    profile_bio: 'Hiking enthusiast documenting my journey to complete all the major trails in the Pacific Northwest.',
+    privacy_default: 'public',
+    created_at: '2023-10-20T12:00:00Z',
+    updated_at: '2023-10-20T12:00:00Z',
+    onboarding_completed: true,
+    quiz_completed: true,
+    is_admin: false,
+    follower_count: 287,
+    following_count: 134
+  },
+  {
+    id: '00000000-0000-0000-0000-000000000011',
+    username: 'dancer_diana',
+    full_name: 'Diana Martinez',
+    avatar_url: 'https://images.unsplash.com/photo-1487412720507-e7ab37603c6f?auto=format&fit=facearea&facepad=2&w=150&h=150&q=80',
+    email: 'diana@example.com',
+    location: 'Miami, FL',
+    age: 25,
+    gender: 'female',
+    interests: ['Dance', 'Music', 'Performance'],
+    hobbies: ['Salsa', 'Ballet'],
+    profile_bio: 'Professional dancer with a goal to learn 42 different dance styles. Currently mastered 19!',
+    privacy_default: 'friends',
+    created_at: '2023-11-08T12:00:00Z',
+    updated_at: '2023-11-08T12:00:00Z',
+    onboarding_completed: true,
+    quiz_completed: true,
+    is_admin: false,
+    follower_count: 398,
+    following_count: 215
+  },
+  {
+    id: '00000000-0000-0000-0000-000000000012',
+    username: 'gamer_greg',
+    full_name: 'Greg Thompson',
+    avatar_url: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=facearea&facepad=2&w=150&h=150&q=80',
+    email: 'greg@example.com',
+    location: 'Tokyo, Japan',
+    age: 29,
+    gender: 'male',
+    interests: ['Gaming', 'eSports', 'Technology'],
+    hobbies: ['Game development', 'Streaming'],
+    profile_bio: 'Professional gamer and streamer. Working on my bucket list of competing in tournaments across 10 countries.',
+    privacy_default: 'public',
+    created_at: '2023-12-03T12:00:00Z',
+    updated_at: '2023-12-03T12:00:00Z',
+    onboarding_completed: true,
+    quiz_completed: true,
+    is_admin: false,
+    follower_count: 512,
+    following_count: 98
+  },
+  {
+    id: '00000000-0000-0000-0000-000000000013',
+    username: 'chef_chloe',
+    full_name: 'Chloe Patel',
+    avatar_url: 'https://images.unsplash.com/photo-1489424731084-a5d8b219a5bb?auto=format&fit=facearea&facepad=2&w=150&h=150&q=80',
+    email: 'chloe@example.com',
+    location: 'New Orleans, LA',
+    age: 34,
+    gender: 'female',
+    interests: ['Cooking', 'Food', 'Culture'],
+    hobbies: ['Baking', 'Food photography'],
+    profile_bio: 'Pastry chef on a mission to master desserts from 42 different cultures. Currently at 23!',
+    privacy_default: 'private',
+    created_at: '2024-01-17T12:00:00Z',
+    updated_at: '2024-01-17T12:00:00Z',
+    onboarding_completed: true,
+    quiz_completed: true,
+    is_admin: false,
+    follower_count: 276,
+    following_count: 183
+  },
+  {
+    id: '00000000-0000-0000-0000-000000000014',
+    username: 'traveler_tom',
+    full_name: 'Tom Jackson',
+    avatar_url: 'https://images.unsplash.com/photo-1492562080023-ab3db95bfbce?auto=format&fit=facearea&facepad=2&w=150&h=150&q=80',
+    email: 'tom@example.com',
+    location: 'Nomadic',
+    age: 31,
+    gender: 'male',
+    interests: ['Travel', 'Culture', 'Languages'],
+    hobbies: ['Photography', 'Blogging'],
+    profile_bio: 'Digital nomad visiting all 7 continents before turning 35. 5 down, 2 to go!',
+    privacy_default: 'public',
+    created_at: '2024-02-09T12:00:00Z',
+    updated_at: '2024-02-09T12:00:00Z',
+    onboarding_completed: true,
+    quiz_completed: true,
+    is_admin: false,
+    follower_count: 623,
+    following_count: 245
+  },
+  {
+    id: '00000000-0000-0000-0000-000000000015',
+    username: 'fitness_fiona',
+    full_name: 'Fiona Lee',
+    avatar_url: 'https://images.unsplash.com/photo-1499952127939-9bbf5af6c51c?auto=format&fit=facearea&facepad=2&w=150&h=150&q=80',
+    email: 'fiona@example.com',
+    location: 'Sydney, Australia',
+    age: 28,
+    gender: 'female',
+    interests: ['Fitness', 'Nutrition', 'Wellness'],
+    hobbies: ['Crossfit', 'Meal prep'],
+    profile_bio: 'Personal trainer with a goal to complete 42 different fitness challenges. Currently at 19!',
+    privacy_default: 'friends',
+    created_at: '2024-03-14T12:00:00Z',
+    updated_at: '2024-03-14T12:00:00Z',
+    onboarding_completed: true,
+    quiz_completed: true,
+    is_admin: false,
+    follower_count: 387,
+    following_count: 214
+  },
+  {
+    id: '00000000-0000-0000-0000-000000000016',
+    username: 'photographer_paul',
+    full_name: 'Paul Nguyen',
+    avatar_url: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=facearea&facepad=2&w=150&h=150&q=80',
+    email: 'paul@example.com',
+    location: 'Cape Town, South Africa',
+    age: 36,
+    gender: 'male',
+    interests: ['Photography', 'Wildlife', 'Nature'],
+    hobbies: ['Drone photography', 'Editing'],
+    profile_bio: 'Wildlife photographer with a mission to photograph 42 endangered species. 28 captured so far.',
+    privacy_default: 'public',
+    created_at: '2024-01-05T12:00:00Z',
+    updated_at: '2024-01-05T12:00:00Z',
+    onboarding_completed: true,
+    quiz_completed: true,
+    is_admin: false,
+    follower_count: 456,
+    following_count: 178
+  },
+  {
+    id: '00000000-0000-0000-0000-000000000017',
+    username: 'gardener_grace',
+    full_name: 'Grace Taylor',
+    avatar_url: 'https://images.unsplash.com/photo-1502823403499-6ccfcf4fb453?auto=format&fit=facearea&facepad=2&w=150&h=150&q=80',
+    email: 'grace@example.com',
+    location: 'Portland, OR',
+    age: 42,
+    gender: 'female',
+    interests: ['Gardening', 'Sustainability', 'Nature'],
+    hobbies: ['Composting', 'Seed saving'],
+    profile_bio: 'Urban gardener growing 42 different edible plants in my backyard. Currently at 31 varieties!',
+    privacy_default: 'private',
+    created_at: '2023-08-22T12:00:00Z',
+    updated_at: '2023-08-22T12:00:00Z',
+    onboarding_completed: true,
+    quiz_completed: true,
+    is_admin: false,
+    follower_count: 198,
+    following_count: 156
+  },
+  {
+    id: '00000000-0000-0000-0000-000000000018',
+    username: 'climber_chris',
+    full_name: 'Chris Evans',
+    avatar_url: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=facearea&facepad=2&w=150&h=150&q=80',
+    email: 'chris@example.com',
+    location: 'Boulder, CO',
+    age: 30,
+    gender: 'male',
+    interests: ['Climbing', 'Mountaineering', 'Adventure'],
+    hobbies: ['Bouldering', 'Slacklining'],
+    profile_bio: 'Rock climber with a goal to climb in 42 different locations around the world. 19 down!',
+    privacy_default: 'public',
+    created_at: '2023-07-11T12:00:00Z',
+    updated_at: '2023-07-11T12:00:00Z',
+    onboarding_completed: true,
+    quiz_completed: true,
+    is_admin: false,
+    follower_count: 342,
+    following_count: 187
+  },
+  {
+    id: '00000000-0000-0000-0000-000000000019',
+    username: 'writer_wendy',
+    full_name: 'Wendy Brown',
+    avatar_url: 'https://images.unsplash.com/photo-1498551172505-8ee7ad69f235?auto=format&fit=facearea&facepad=2&w=150&h=150&q=80',
+    email: 'wendy@example.com',
+    location: 'Edinburgh, Scotland',
+    age: 38,
+    gender: 'female',
+    interests: ['Writing', 'Literature', 'Travel'],
+    hobbies: ['Poetry', 'Journaling'],
+    profile_bio: 'Author working on writing in 42 different locations that inspired famous novels. 15 locations visited so far!',
+    privacy_default: 'friends',
+    created_at: '2023-06-19T12:00:00Z',
+    updated_at: '2023-06-19T12:00:00Z',
+    onboarding_completed: true,
+    quiz_completed: true,
+    is_admin: false,
+    follower_count: 267,
+    following_count: 198
+  },
+  {
+    id: '00000000-0000-0000-0000-000000000020',
+    username: 'diver_dave',
+    full_name: 'Dave Miller',
+    avatar_url: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=facearea&facepad=2&w=150&h=150&q=80',
+    email: 'dave@example.com',
+    location: 'Cairns, Australia',
+    age: 34,
+    gender: 'male',
+    interests: ['Diving', 'Ocean', 'Marine Life'],
+    hobbies: ['Underwater photography', 'Conservation'],
+    profile_bio: 'Marine biologist and diver with a mission to dive in 42 of the world's most unique reef systems. 23 explored!',
+    privacy_default: 'public',
+    created_at: '2023-05-28T12:00:00Z',
+    updated_at: '2023-05-28T12:00:00Z',
+    onboarding_completed: true,
+    quiz_completed: true,
+    is_admin: false,
+    follower_count: 412,
+    following_count: 156
+  },
+  {
+    id: '00000000-0000-0000-0000-000000000021',
+    username: 'baker_beth',
+    full_name: 'Beth Wilson',
+    avatar_url: 'https://images.unsplash.com/photo-1531123897727-8f129e1688ce?auto=format&fit=facearea&facepad=2&w=150&h=150&q=80',
+    email: 'beth@example.com',
+    location: 'Paris, France',
+    age: 31,
+    gender: 'female',
+    interests: ['Baking', 'Food', 'Travel'],
+    hobbies: ['Pastry making', 'Food blogging'],
+    profile_bio: 'Pastry chef learning to bake 42 signature desserts from around the world. 26 mastered so far!',
+    privacy_default: 'private',
+    created_at: '2023-04-14T12:00:00Z',
+    updated_at: '2023-04-14T12:00:00Z',
+    onboarding_completed: true,
+    quiz_completed: true,
+    is_admin: false,
+    follower_count: 298,
+    following_count: 176
+  },
+  {
+    id: '00000000-0000-0000-0000-000000000022',
+    username: 'musician_mike',
+    full_name: 'Mike Davis',
+    avatar_url: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=facearea&facepad=2&w=150&h=150&q=80',
+    email: 'mike@example.com',
+    location: 'Austin, TX',
+    age: 27,
+    gender: 'male',
+    interests: ['Music', 'Instruments', 'Performance'],
+    hobbies: ['Guitar', 'Songwriting'],
+    profile_bio: 'Musician on a journey to learn 42 different instruments. Currently mastered 14!',
+    privacy_default: 'public',
+    created_at: '2023-03-22T12:00:00Z',
+    updated_at: '2023-03-22T12:00:00Z',
+    onboarding_completed: true,
+    quiz_completed: true,
+    is_admin: false,
+    follower_count: 356,
+    following_count: 203
+  },
+  {
+    id: '00000000-0000-0000-0000-000000000023',
+    username: 'painter_priya',
+    full_name: 'Priya Sharma',
+    avatar_url: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=facearea&facepad=2&w=150&h=150&q=80',
+    email: 'priya@example.com',
+    location: 'Mumbai, India',
+    age: 33,
+    gender: 'female',
+    interests: ['Painting', 'Art', 'Culture'],
+    hobbies: ['Oil painting', 'Art history'],
+    profile_bio: 'Artist exploring 42 different painting techniques from around the world. 19 techniques mastered!',
+    privacy_default: 'friends',
+    created_at: '2023-02-18T12:00:00Z',
+    updated_at: '2023-02-18T12:00:00Z',
+    onboarding_completed: true,
+    quiz_completed: true,
+    is_admin: false,
+    follower_count: 287,
+    following_count: 176
+  },
+  {
+    id: '00000000-0000-0000-0000-000000000024',
+    username: 'cyclist_charlie',
+    full_name: 'Charlie Park',
+    avatar_url: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=facearea&facepad=2&w=150&h=150&q=80',
+    email: 'charlie@example.com',
+    location: 'Amsterdam, Netherlands',
+    age: 29,
+    gender: 'non_binary',
+    interests: ['Cycling', 'Travel', 'Sustainability'],
+    hobbies: ['Bike repair', 'Route planning'],
+    profile_bio: 'Cycling enthusiast with a goal to bike through 42 different countries. 16 countries completed!',
+    privacy_default: 'public',
+    created_at: '2023-01-30T12:00:00Z',
+    updated_at: '2023-01-30T12:00:00Z',
+    onboarding_completed: true,
+    quiz_completed: true,
+    is_admin: false,
+    follower_count: 312,
+    following_count: 198
+  },
+  {
+    id: '00000000-0000-0000-0000-000000000025',
+    username: 'knitter_kate',
+    full_name: 'Kate Johnson',
+    avatar_url: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=facearea&facepad=2&w=150&h=150&q=80',
+    email: 'kate@example.com',
+    location: 'Edinburgh, Scotland',
+    age: 36,
+    gender: 'female',
+    interests: ['Knitting', 'Crafts', 'Design'],
+    hobbies: ['Yarn dyeing', 'Pattern design'],
+    profile_bio: 'Fiber artist with a mission to learn 42 different knitting techniques from around the world. 22 mastered!',
+    privacy_default: 'private',
+    created_at: '2022-12-15T12:00:00Z',
+    updated_at: '2022-12-15T12:00:00Z',
+    onboarding_completed: true,
+    quiz_completed: true,
+    is_admin: false,
+    follower_count: 198,
+    following_count: 156
+  },
+  {
+    id: '00000000-0000-0000-0000-000000000026',
+    username: 'surfer_steve',
+    full_name: 'Steve Thompson',
+    avatar_url: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=facearea&facepad=2&w=150&h=150&q=80',
+    email: 'steve@example.com',
+    location: 'Hawaii, USA',
+    age: 27,
+    gender: 'male',
+    interests: ['Surfing', 'Ocean', 'Travel'],
+    hobbies: ['Board shaping', 'Ocean conservation'],
+    profile_bio: 'Surfer riding waves in 42 different surf spots around the world. 18 spots checked off!',
+    privacy_default: 'public',
+    created_at: '2022-11-20T12:00:00Z',
+    updated_at: '2022-11-20T12:00:00Z',
+    onboarding_completed: true,
+    quiz_completed: true,
+    is_admin: false,
+    follower_count: 423,
+    following_count: 187
+  },
+  {
+    id: '00000000-0000-0000-0000-000000000027',
+    username: 'dancer_dani',
+    full_name: 'Danielle Lopez',
+    avatar_url: 'https://images.unsplash.com/photo-1531123897727-8f129e1688ce?auto=format&fit=facearea&facepad=2&w=150&h=150&q=80',
+    email: 'dani@example.com',
+    location: 'Rio de Janeiro, Brazil',
+    age: 25,
+    gender: 'female',
+    interests: ['Dance', 'Music', 'Performance'],
+    hobbies: ['Choreography', 'Teaching'],
+    profile_bio: 'Dancer learning 42 different dance styles from cultures around the world. 17 styles mastered!',
+    privacy_default: 'friends',
+    created_at: '2022-10-12T12:00:00Z',
+    updated_at: '2022-10-12T12:00:00Z',
+    onboarding_completed: true,
+    quiz_completed: true,
+    is_admin: false,
+    follower_count: 356,
+    following_count: 234
+  },
+  {
+    id: '00000000-0000-0000-0000-000000000028',
+    username: 'chef_james',
+    full_name: 'James Wilson',
+    avatar_url: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=facearea&facepad=2&w=150&h=150&q=80',
+    email: 'james@example.com',
+    location: 'New York, NY',
+    age: 34,
+    gender: 'male',
+    interests: ['Cooking', 'Food', 'Culture'],
+    hobbies: ['Fermentation', 'Foraging'],
+    profile_bio: 'Chef exploring 42 different fermentation techniques from around the world. 24 techniques mastered!',
+    privacy_default: 'public',
+    created_at: '2022-09-05T12:00:00Z',
+    updated_at: '2022-09-05T12:00:00Z',
+    onboarding_completed: true,
+    quiz_completed: true,
+    is_admin: false,
+    follower_count: 287,
+    following_count: 156
+  },
+  {
+    id: '00000000-0000-0000-0000-000000000029',
+    username: 'skier_sophie',
+    full_name: 'Sophie Martin',
+    avatar_url: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=facearea&facepad=2&w=150&h=150&q=80',
+    email: 'sophie@example.com',
+    location: 'Chamonix, France',
+    age: 29,
+    gender: 'female',
+    interests: ['Skiing', 'Mountains', 'Adventure'],
+    hobbies: ['Avalanche safety', 'Ski touring'],
+    profile_bio: 'Ski instructor with a goal to ski in 42 different resorts across 7 continents. 21 resorts visited!',
+    privacy_default: 'private',
+    created_at: '2022-08-18T12:00:00Z',
+    updated_at: '2022-08-18T12:00:00Z',
+    onboarding_completed: true,
+    quiz_completed: true,
+    is_admin: false,
+    follower_count: 245,
+    following_count: 178
+  },
+  {
+    id: '00000000-0000-0000-0000-000000000030',
+    username: 'photographer_peter',
+    full_name: 'Peter Chang',
+    avatar_url: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=facearea&facepad=2&w=150&h=150&q=80',
+    email: 'peter@example.com',
+    location: 'Kyoto, Japan',
+    age: 32,
+    gender: 'male',
+    interests: ['Photography', 'Travel', 'Culture'],
+    hobbies: ['Street photography', 'Darkroom printing'],
+    profile_bio: 'Photographer capturing the essence of 42 different cultures around the world. 19 cultures documented so far!',
+    privacy_default: 'public',
+    created_at: '2022-07-22T12:00:00Z',
+    updated_at: '2022-07-22T12:00:00Z',
+    onboarding_completed: true,
+    quiz_completed: true,
+    is_admin: false,
+    follower_count: 378,
+    following_count: 203
+  }
+];
+
+// Generate follow relationships between demo users
+export const generateFollowRelationships = () => {
+  const follows = [];
+  
+  // Each user follows between 5-15 other users
+  for (const user of demoUsers) {
+    // Determine how many users this person will follow
+    const followCount = Math.floor(Math.random() * 11) + 5; // 5-15
+    
+    // Get random users to follow
+    const otherUsers = demoUsers.filter(other => other.id !== user.id);
+    const shuffled = [...otherUsers].sort(() => 0.5 - Math.random());
+    const usersToFollow = shuffled.slice(0, followCount);
+    
+    // Create follow relationships
+    for (const followedUser of usersToFollow) {
+      // Determine if this will be mutual (friends)
+      const isMutual = Math.random() > 0.3; // 70% chance of mutual follow
+      
+      // Determine status based on privacy
+      let status = 'accepted';
+      if (followedUser.privacy_default === 'private' || followedUser.privacy_default === 'friends') {
+        status = Math.random() > 0.7 ? 'accepted' : 'pending'; // 70% chance of being accepted
+      }
+      
+      follows.push({
+        follower_id: user.id,
+        following_id: followedUser.id,
+        status
+      });
+      
+      // If mutual, create the reverse relationship
+      if (isMutual && status === 'accepted') {
+        follows.push({
+          follower_id: followedUser.id,
+          following_id: user.id,
+          status: 'accepted'
+        });
+      }
+    }
+  }
+  
+  return follows;
+};
+
+// Generate sample posts for demo users
+export const generateDemoPosts = () => {
+  const posts = [];
+  const statuses = ['in_progress', 'completed'];
+  const activityTitles = [
+    'Learn to surf',
+    'Run a marathon',
+    'Visit the Grand Canyon',
+    'Learn a new language',
+    'Start a garden',
+    'Write a book',
+    'Learn to play guitar',
+    'Go skydiving',
+    'Volunteer abroad',
+    'Learn to cook a new cuisine'
+  ];
+  
+  const postContents = [
+    "Just started this amazing activity! Can't wait to see where this journey takes me. #excited #newbeginnings",
+    "Making great progress on this goal. It's challenging but so rewarding! #progress #growth",
+    "Finally completed this bucket list item! What an incredible experience. Highly recommend to everyone! #achievement #bucketlist",
+    "Halfway through and loving every moment. This has been such a transformative experience. #journey #transformation",
+    "Day one of this adventure and I'm already learning so much. Excited for what's ahead! #learning #adventure",
+    "This was harder than I expected but so worth it! The view from the top was absolutely breathtaking. #challenge #worthit",
+    "Can't believe I finally did this! It's been on my list for years and the experience exceeded all expectations. #dreamscometrue #accomplished",
+    "Started this journey with hesitation but now I'm fully committed. Sometimes you just need to take that first step! #firstep #commitment",
+    "Three weeks in and I can already see improvement. Consistency really is key! #consistency #improvement",
+    "Completed! This experience has changed my perspective in ways I never expected. #lifechanging #perspective"
+  ];
+  
+  // Each user creates 5-10 posts
+  for (const user of demoUsers) {
+    // Determine how many posts this user will create
+    const postCount = Math.floor(Math.random() * 6) + 5; // 5-10
+    
+    for (let i = 0; i < postCount; i++) {
+      // Randomly select activity, status, and content
+      const activityTitle = activityTitles[Math.floor(Math.random() * activityTitles.length)];
+      const status = statuses[Math.floor(Math.random() * statuses.length)];
+      const content = postContents[Math.floor(Math.random() * postContents.length)];
+      
+      // Randomly decide if post has an image
+      const hasImage = Math.random() > 0.6; // 40% chance of having an image
+      const imageUrl = hasImage ? `https://source.unsplash.com/random/800x600/?${activityTitle.toLowerCase().replace(/\s+/g, ',')}` : null;
+      
+      // Create post with random date in the past year
+      const daysAgo = Math.floor(Math.random() * 365);
+      const createdAt = new Date();
+      createdAt.setDate(createdAt.getDate() - daysAgo);
+      
+      posts.push({
+        user_id: user.id,
+        activity_title: activityTitle,
+        status,
+        content,
+        image_url: imageUrl,
+        created_at: createdAt.toISOString(),
+        visibility: user.privacy_default === 'private' ? 'private' : (user.privacy_default === 'friends' ? 'friends' : 'public')
+      });
+    }
+  }
+  
+  return posts;
+};
