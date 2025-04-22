@@ -7,6 +7,7 @@ import { Save } from 'lucide-react';
 interface Activity {
   id: string;
   title: string;
+  display_title?: string;
   description?: string;
   difficulty?: number;
   image_url?: string;
@@ -77,9 +78,31 @@ export default function AdminActivityEditor() {
           <input
             className="w-full border px-3 py-2 rounded"
             value={edited.title || ''}
-            onChange={(e) => updateField('title', e.target.value)}
+            onChange={(e) => {
+              updateField('title', e.target.value);
+              // If display_title is empty, update it too
+              if (!edited.display_title) {
+                updateField('display_title', e.target.value);
+              }
+            }}
             placeholder="Title"
           />
+            
+          <div>
+            <label htmlFor="display_title" className="block text-sm font-medium text-gray-700 mb-1">
+              Display Title
+            </label>
+            <input
+              className="w-full border px-3 py-2 rounded"
+              value={edited.display_title || ''}
+              onChange={(e) => updateField('display_title', e.target.value)}
+              placeholder="User-friendly title (e.g., 'Visit New York', 'Learn to play guitar')"
+            />
+            <p className="text-xs text-gray-500 mt-1">
+              This is how the title will appear to users. If left empty, the original title will be used.
+              Sorting will still be based on the original title.
+            </p>
+          </div>
 
           <textarea
             className="w-full border px-3 py-2 rounded"

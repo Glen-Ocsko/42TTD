@@ -237,7 +237,7 @@ export default function UserBookings() {
                     {(booking.ad_title || booking.activity_title) && (
                       <div className="flex items-center gap-2 mb-2">
                         <Tag className="h-5 w-5 text-gray-400" />
-                        <span>{booking.ad_title || booking.activity_title}</span>
+                        <span>{booking.ad_title || booking.activity_display_title || booking.activity_title}</span>
                       </div>
                     )}
                     

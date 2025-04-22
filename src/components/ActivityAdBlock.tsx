@@ -20,6 +20,7 @@ import { Dialog } from '@headlessui/react';
 interface ActivityAdBlockProps {
   activityId: string;
   activityTitle: string;
+  activityDisplayTitle?: string;
   activityTags?: string[];
   maxAds?: number;
 }
@@ -27,6 +28,7 @@ interface ActivityAdBlockProps {
 export default function ActivityAdBlock({ 
   activityId, 
   activityTitle, 
+  activityDisplayTitle,
   activityTags = [], 
   maxAds = 3 
 }: ActivityAdBlockProps) {

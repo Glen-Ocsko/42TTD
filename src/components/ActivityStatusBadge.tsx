@@ -4,9 +4,10 @@ import { Target, Clock, CheckCircle2 } from 'lucide-react';
 interface ActivityStatusBadgeProps {
   status: 'not_started' | 'in_progress' | 'completed';
   className?: string;
+  displayTitle?: string;
 }
 
-export default function ActivityStatusBadge({ status, className = '' }: ActivityStatusBadgeProps) {
+export default function ActivityStatusBadge({ status, className = '', displayTitle }: ActivityStatusBadgeProps) {
   const statusConfig = {
     not_started: {
       icon: <Target className="h-4 w-4" />,

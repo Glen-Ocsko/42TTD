@@ -2,15 +2,22 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useCurrentUser } from '../hooks/useCurrentUser';
 import { supabase, safeUserQuery } from '../lib/supabase';
-import { BookmarkPlus, Check, Loader2, Lock } from 'lucide-react';
+import { Plus, Check, Loader2, Lock } from 'lucide-react';
 
-interface AddToListButtonProps {
+interface DynamicAddToListButtonProps {
   activityId: string;
-  onSuccess?: () => void;
+  onAddSuccess?: () => void;
+  className?: string;
+  iconOnly?: boolean;
 }
 
-export default function AddToListButton({ activityId, onSuccess }: AddToListButtonProps) {
-  const { user, userId } = useCurrentUser();
+export default function DynamicAddToListButton({ 
+  activityId, 
+  onAddSuccess, 
+  className = "w-full flex items-center justify-center gap-2 px-4 py-2 rounded-lg",
+  iconOnly = false
+}: DynamicAddToListButtonProps) {
+  const { userId, isAuthenticated } = useCurrentUser();
   const navigate = useNavigate();
   const [isAdded, setIsAdded] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -50,6 +57,11 @@ export default function AddToListButton({ activityId, onSuccess }: AddToListButt
   };
 
   const addToList = async () => {
+    if (!isAuthenticated) {
+      navigate('/login', { state: { returnTo: window.location.pathname } });
+      return;
+    }
+
     if (isAdded || !userId) return;
 
     setLoading(true);
@@ -72,7 +84,10 @@ export default function AddToListButton({ activityId, onSuccess }: AddToListButt
       );
       
       setIsAdded(true);
-      onSuccess?.();
+      
+      if (onAddSuccess) {
+        onAddSuccess();
+      }
 
       // Show toast message
       const toast = document.createElement('div');
@@ -83,6 +98,19 @@ export default function AddToListButton({ activityId, onSuccess }: AddToListButt
 
     } catch (err) {
       console.error('Error adding activity:', err);
+      
+      // Show error toast
+      const toast = document.createElement('div');
+      toast.className = 'fixed bottom-4 left-1/2 transform -translate-x-1/2 bg-red-600 text-white px-4 py-2 rounded-lg shadow-lg z-50';
+      
+      if (err instanceof Error && err.message.includes('duplicate key')) {
+        toast.textContent = 'Already on your list!';
+      } else {
+        toast.textContent = 'Failed to add to list. Please try again.';
+      }
+      
+      document.body.appendChild(toast);
+      setTimeout(() => toast.remove(), 3000);
     } finally {
       setLoading(false);
     }
@@ -90,25 +118,34 @@ export default function AddToListButton({ activityId, onSuccess }: AddToListButt
 
   if (checking) {
     return (
-      <button 
+      <button
         disabled
-        className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-gray-100 text-gray-400 rounded-lg"
+        className={`${className} ${
+          iconOnly 
+            ? 'bg-gray-200/80 hover:bg-gray-200 shadow-md text-gray-400' 
+            : 'bg-gray-100 text-gray-400'
+        }`}
+        aria-label="Checking if activity is on your list"
       >
         <Loader2 className="h-5 w-5 animate-spin" />
-        Checking...
+        {!iconOnly && <span>Checking...</span>}
       </button>
     );
   }
 
   if (isAdded) {
     return (
-      <button 
-        disabled
-        className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-green-100 text-green-700 rounded-lg"
+      <button
+        onClick={() => {}} // Empty function to maintain button appearance
+        className={`${className} ${
+          iconOnly 
+            ? 'bg-green-600 text-white shadow-md hover:bg-green-700' 
+            : 'bg-green-600 text-white hover:bg-green-700'
+        }`}
         aria-label="Activity added to your list"
       >
         <Check className="h-5 w-5" />
-        Added to My List
+        {!iconOnly && <span>Added to My List</span>}
       </button>
     );
   }
@@ -116,19 +153,23 @@ export default function AddToListButton({ activityId, onSuccess }: AddToListButt
   return (
     <button
       onClick={addToList}
+      aria-label={isAuthenticated ? "Add to my list" : "Sign in to add to your list"}
       disabled={loading}
-      aria-label={user ? "Add to my list" : "Sign in to add to your list"}
-      className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
+      className={`${className} ${
+        iconOnly 
+          ? `${isAuthenticated ? 'bg-blue-600 hover:bg-blue-700 text-white' : 'bg-gray-600 hover:bg-gray-700 text-white'} shadow-md hover:shadow-lg transform hover:-translate-y-0.5 transition-all`
+          : `${isAuthenticated ? 'bg-blue-600 text-white hover:bg-blue-700' : 'bg-gray-600 text-white hover:bg-gray-700'}`
+      } disabled:opacity-50`}
     >
       {loading ? (
         <>
           <Loader2 className="h-5 w-5 animate-spin" />
-          Adding...
+          {!iconOnly && <span>Adding...</span>}
         </>
       ) : (
         <>
-          {user ? <BookmarkPlus className="h-5 w-5" /> : <Lock className="h-5 w-5" />}
-          {user ? 'Add to My List' : 'Sign in to add to your list'}
+          {isAuthenticated ? <Plus className="h-5 w-5" /> : <Lock className="h-5 w-5" />}
+          {!iconOnly && <span>{isAuthenticated ? 'Add to My List' : 'Sign in to add to your list'}</span>}
         </>
       )}
     </button>

@@ -398,9 +398,11 @@ export default function ActivityPost({ post, onUpdate }: ActivityPostProps) {
           </div>
         </div>
 
-        <div className="text-sm text-blue-600 mb-3">
-          Re: {post.activity?.title}
-        </div>
+        {post.activity?.title && (
+          <div className="text-sm text-blue-600 mb-3">
+            Re: {post.activity?.display_title || post.activity?.title}
+          </div>
+        )}
 
         <p className="text-gray-700 whitespace-pre-wrap mb-3">
           {renderContentWithHashtags(post.content)}

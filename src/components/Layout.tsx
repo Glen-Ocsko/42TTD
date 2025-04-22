@@ -17,7 +17,8 @@ import {
   Building2,
   BadgeCheck,
   MessageSquare,
-  Clock
+  Clock,
+  Home
 } from 'lucide-react';
 
 interface LayoutProps {
@@ -182,6 +183,13 @@ export default function Layout({ children }: LayoutProps) {
 
               {isAuthenticated && (
                 <nav className="hidden md:flex ml-8 space-x-6">
+                  <Link 
+                    to="/" 
+                    className="flex items-center gap-2 text-gray-600 hover:text-blue-600"
+                  >
+                    <Home className="h-5 w-5" />
+                    <span>Home</span>
+                  </Link>
                   <Link 
                     to="/activities" 
                     className="flex items-center gap-2 text-gray-600 hover:text-blue-600"

@@ -9,6 +9,7 @@ import AdPlaceholder from './AdPlaceholder';
 interface Activity {
   id: string;
   title: string;
+  display_title?: string;
   is_custom?: boolean;
 }
 
@@ -59,7 +60,7 @@ export default function ActivityPosts({ activity }: ActivityPostsProps) {
           activity:activities!activity_posts_activity_id_fkey (
             id,
             title,
-            category_tags
+            display_title
           ),
           profiles!activity_posts_user_id_fkey (
             username,

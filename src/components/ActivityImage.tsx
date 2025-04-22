@@ -3,18 +3,22 @@ import { ImageOff } from 'lucide-react';
 
 interface ActivityImageProps {
   title: string;
+  displayTitle?: string;
   imageUrl?: string | null;
   unsplashKeywords?: string | null;
   className?: string;
   aspectRatio?: 'square' | 'video' | 'wide';
+  onClick?: () => void;
 }
 
 export default function ActivityImage({
   title,
+  displayTitle,
   imageUrl,
   unsplashKeywords,
   className = '',
-  aspectRatio = 'video'
+  aspectRatio = 'video',
+  onClick
 }: ActivityImageProps) {
   const [hasError, setHasError] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -33,7 +37,9 @@ export default function ActivityImage({
 
   return (
     <div
-      className={`relative overflow-hidden rounded-t-lg ${aspectRatioClasses[aspectRatio]} ${className}`}
+      className={`relative overflow-hidden rounded-t-lg ${aspectRatioClasses[aspectRatio]} ${className} ${onClick ? 'cursor-pointer' : ''}`}
+      className={`relative overflow-hidden rounded-t-lg ${aspectRatioClasses[aspectRatio]} ${className} ${onClick ? 'cursor-pointer' : ''}`}
+      onClick={onClick}
     >
       {/* Loading shimmer */}
       {loading && (
@@ -49,7 +55,7 @@ export default function ActivityImage({
 
       <img
         src={imageToShow}
-        alt={title}
+        alt={displayTitle || title}
         className={`w-full h-full object-cover transition-opacity duration-300 ${
           loading ? 'opacity-0' : 'opacity-100'
         }`}

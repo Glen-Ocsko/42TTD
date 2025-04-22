@@ -6,13 +6,15 @@ import { supabase } from '../lib/supabase';
 import { useCurrentUser } from '../hooks/useCurrentUser';
 import { useDemo } from '../contexts/DemoContext';
 import ActivityImage from './ActivityImage';
+import DynamicAddToListButton from './DynamicAddToListButton';
 import {
-  Eye, Plus, Lock, Trash2, Edit2, Save, X, Upload, Tag, Star
+  Eye, Plus, Lock, Trash2, Edit2, Save, X, Upload, Tag, Star, Check
 } from 'lucide-react';
 
 interface Activity {
   id: string;
   title: string;
+  display_title?: string;
   description?: string;
   category_tags?: string[];
   difficulty?: number;
@@ -122,6 +124,7 @@ export default function ActivityCard({
         imageUrl={activity.image_url}
         unsplashKeywords={activity.unsplash_keywords}
         aspectRatio="video"
+        onClick={() => navigate(`/activities/${activity.id}`)}
       />
       <div className="p-4 flex flex-col flex-grow">
         {isEditing ? (
@@ -129,8 +132,14 @@ export default function ActivityCard({
             <input
               className="w-full border px-2 py-1 rounded"
               value={editedActivity.title}
-              onChange={e => setEditedActivity(p => ({ ...p, title: e.target.value }))}
+              onChange={e => setEditedActivity(p => ({ ...p, title: e.target.value, display_title: p.display_title || e.target.value }))}
               placeholder="Title"
+            />
+            <input
+              className="w-full border px-2 py-1 rounded"
+              value={editedActivity.display_title || ''}
+              onChange={e => setEditedActivity(p => ({ ...p, display_title: e.target.value }))}
+              placeholder="Display Title (e.g., 'Visit Paris', 'Learn to surf')"
             />
             <textarea
               className="w-full border px-2 py-1 rounded"
@@ -186,7 +195,7 @@ export default function ActivityCard({
         ) : (
           <>
             <div className="flex justify-between items-start mb-2">
-              <h3 className="text-lg font-bold">{activity.title}</h3>
+              <h3 className="text-lg font-bold">{activity.display_title || activity.title}</h3>
               {isAdmin && <button onClick={() => setIsEditing(true)}><Edit2 className="h-4 w-4 text-gray-500" /></button>}
             </div>
             
@@ -195,27 +204,47 @@ export default function ActivityCard({
             )}
             
             <div className="mt-auto flex gap-2">
-              <button
-                onClick={() => navigate(`/activities/${activity.id}`)}
-                className="flex-1 bg-[#f97316] text-white font-medium px-4 py-2 rounded-lg hover:bg-orange-700 transition-all duration-200 ease-in-out"
-              >
-                <Eye className="h-4 w-4 inline mr-2" /> Learn More
-              </button>
               {showListActions && (
                 isOnList ? (
                   <button onClick={onRemoveFromList} className="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 transition-all duration-200 ease-in-out">
                     <Trash2 className="h-4 w-4" /> Remove
                   </button>
                 ) : (
-                  <button onClick={onAddToList} className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-all duration-200 ease-in-out">
-                    {isAuthenticated ? <><Plus className="h-4 w-4" /> Add to List</> : <><Lock className="h-4 w-4" /> Sign In</>}
-                  </button>
+                  <DynamicAddToListButton 
+                    activityId={activity.id} 
+                    onAddSuccess={onAddToList}
+                    className="w-full px-4 py-2 rounded-lg transition-all duration-200 ease-in-out text-sm font-medium"
+                  />
                 )
               )}
             </div>
           </>
         )}
       </div>
+      {!isEditing && !isOnList && showListActions && (
+        <div className="absolute bottom-3 right-3 z-10">
+          <DynamicAddToListButton 
+            activityId={activity.id} 
+            onAddSuccess={onAddToList}
+            className="px-3 py-1.5 rounded-lg shadow-md hover:shadow-lg transform hover:-translate-y-0.5 transition-all flex items-center gap-1 text-xs font-medium"
+            iconOnly={false}
+          />
+        </div>
+      )}
+      {!isEditing && (
+        <div className="absolute top-0 right-0 left-0 p-4">
+          <div className="flex justify-between">
+            {isAdmin && (
+              <button 
+                onClick={() => setIsEditing(true)}
+                className="p-2 bg-white/80 hover:bg-white rounded-full text-gray-700 shadow-md"
+              >
+                <Edit2 className="h-4 w-4" />
+              </button>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

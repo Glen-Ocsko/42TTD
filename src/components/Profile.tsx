@@ -16,6 +16,10 @@ import {
   AlertTriangle,
   CreditCard,
   Bell,
+  Plus,
+  Eye,
+  EyeOff,
+  Flag
   Lock,
   UserPlus,
   UserCheck
@@ -37,6 +41,7 @@ interface Activity {
   activity: {
     id: string;
     title: string;
+    display_title?: string;
     description: string | null;
     category_tags: string[];
     difficulty: number;
@@ -44,6 +49,7 @@ interface Activity {
   };
   status: 'not_started' | 'in_progress' | 'completed';
   created_at: string;
+  is_custom?: boolean;
 }
 
 interface UserProfile {
@@ -98,6 +104,9 @@ export default function Profile() {
   const [error, setError] = useState('');
   const [editing, setEditing] = useState(false);
   const [activeTab, setActiveTab] = useState<'activities' | 'bookings' | 'messages' | 'settings' | 'moderation'>('activities');
+  const [showHiddenActivities, setShowHiddenActivities] = useState(false);
+  const [customActivities, setCustomActivities] = useState<any[]>([]);
+  const [customActivityStats, setCustomActivityStats] = useState({ total: 0, published: 0 });
   const [showPrivacyModal, setShowPrivacyModal] = useState(false);
   const [showRequestsModal, setShowRequestsModal] = useState(false);
   const [pendingRequestsCount, setPendingRequestsCount] = useState(0);
@@ -128,6 +137,7 @@ export default function Profile() {
     } else if (userId) {
       loadProfile();
       loadActivities();
+      loadCustomActivities();
       checkPendingRequests();
       checkUnreadModerationMessages();
       loadWarningsAndSuspensions();
@@ -243,6 +253,31 @@ export default function Profile() {
     }
   };
 
+  const loadCustomActivities = async () => {
+    try {
+      // Load custom activities created by the user
+      const { data, error: activitiesError } = await supabase
+        .from('custom_activities')
+        .select('*, activity_posts(id, visibility)')
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false });
+
+      if (activitiesError) throw activitiesError;
+      
+      // Count published activities (those that have been approved for the main list)
+      const publishedCount = data?.filter(a => a.moderation_status === 'approved' && a.proposed_for_main_list).length || 0;
+      
+      setCustomActivities(data || []);
+      setCustomActivityStats({
+        total: data?.length || 0,
+        published: publishedCount
+      });
+    } catch (err) {
+      console.error('Error loading custom activities:', err);
+      setError('Failed to load custom activities');
+    }
+  };
+
   const handleEditComplete = () => {
     setEditing(false);
     loadProfile();
@@ -355,6 +390,12 @@ export default function Profile() {
                   <div className="flex items-center gap-2 text-gray-600">
                     <Calendar className="h-4 w-4" />
                     <span>{profile.age} years old</span>
+                  </div>
+                )}
+                {customActivityStats.total > 0 && (
+                  <div className="flex items-center gap-2 text-gray-600">
+                    <Plus className="h-4 w-4" />
+                    <span>Activities Created: {customActivityStats.total} total | {customActivityStats.published} published</span>
                   </div>
                 )}
                 {profile?.privacy_default && (
@@ -564,7 +605,26 @@ export default function Profile() {
             {/* Tab Content */}
             {activeTab === 'activities' && (
               <div>
-                <h2 className="text-2xl font-bold mb-6">My Activities</h2>
+                <div className="flex justify-between items-center mb-6">
+                  <h2 className="text-2xl font-bold">My Activities</h2>
+                  <button
+                    onClick={() => setShowHiddenActivities(!showHiddenActivities)}
+                    className="flex items-center gap-2 px-3 py-1 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 text-sm"
+                  >
+                    {showHiddenActivities ? (
+                      <>
+                        <EyeOff className="h-4 w-4" />
+                        Hide Private
+                      </>
+                    ) : (
+                      <>
+                        <Eye className="h-4 w-4" />
+                        Show All
+                      </>
+                    )}
+                  </button>
+                </div>
+                
                 <div className="grid gap-6 md:grid-cols-2">
                   {activities.map((activity) => (
                     <ActivityCard
@@ -586,6 +646,83 @@ export default function Profile() {
                     </div>
                   )}
                 </div>
+                
+                {/* Custom Activities Section */}
+                {customActivities.length > 0 && (
+                  <div className="mt-10">
+                    <h3 className="text-xl font-bold mb-4">My Created Activities</h3>
+                    <div className="grid gap-6 md:grid-cols-2">
+                      {customActivities
+                        .filter(activity => {
+                          // Filter based on visibility if not showing hidden
+                          if (!showHiddenActivities) {
+                            const postVisibility = activity.activity_posts?.[0]?.visibility;
+                            return !postVisibility || postVisibility === 'public';
+                          }
+                          return true;
+                        })
+                        .map((activity) => (
+                          <div key={activity.id} className="bg-white rounded-lg shadow-sm overflow-hidden">
+                            <div className="p-4">
+                              <div className="flex justify-between items-start mb-2">
+                                <h3 className="font-bold text-lg">{activity.display_title || activity.title}</h3>
+                                <div className="flex items-center gap-1">
+                                  {activity.proposed_for_main_list && (
+                                    <span className={`text-xs px-2 py-1 rounded-full ${
+                                      activity.moderation_status === 'approved' ? 'bg-green-100 text-green-700' :
+                                      activity.moderation_status === 'rejected' ? 'bg-red-100 text-red-700' :
+                                      activity.moderation_status === 'requested_changes' ? 'bg-blue-100 text-blue-700' :
+                                      'bg-yellow-100 text-yellow-700'
+                                    }`}>
+                                      {activity.moderation_status === 'approved' ? 'Published' :
+                                       activity.moderation_status === 'rejected' ? 'Rejected' :
+                                       activity.moderation_status === 'requested_changes' ? 'Changes Requested' :
+                                       'Pending Review'}
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+                              
+                              <p className="text-gray-600 text-sm mb-3">{activity.description}</p>
+                              
+                              <div className="flex flex-wrap gap-2 mb-3">
+                                {activity.category_tags?.map((tag: string) => (
+                                  <span key={tag} className="px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded-full">
+                                    {tag}
+                                  </span>
+                                ))}
+                              </div>
+                              
+                              {activity.activity_posts && activity.activity_posts.length > 0 && (
+                                <div className="text-sm text-gray-500 mb-2">
+                                  Visibility: {activity.activity_posts[0].visibility === 'public' ? 'Public' : 
+                                              activity.activity_posts[0].visibility === 'friends' ? 'Friends Only' : 
+                                              'Private'}
+                                </div>
+                              )}
+                              
+                              {activity.moderation_status === 'requested_changes' && activity.moderator_notes && (
+                                <div className="bg-blue-50 p-3 rounded-lg mb-3">
+                                  <p className="text-sm text-blue-700">
+                                    <span className="font-medium">Requested Changes:</span> {activity.moderator_notes}
+                                  </p>
+                                </div>
+                              )}
+                              
+                              {activity.moderation_status === 'rejected' && activity.moderator_notes && (
+                                <div className="bg-red-50 p-3 rounded-lg mb-3">
+                                  <p className="text-sm text-red-700">
+                                    <span className="font-medium">Rejection Reason:</span> {activity.moderator_notes}
+                                  </p>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        ))
+                      }
+                    </div>
+                  </div>
+                )}
               </div>
             )}
 
