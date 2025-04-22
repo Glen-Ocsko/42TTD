@@ -39,10 +39,11 @@ import AdminSuppliers from './pages/AdminSuppliers';
 import Messages from './pages/Messages';
 import UserProfile from './pages/UserProfile';
 import Users from './pages/Users';
-import ModerationQueue from './pages/ModerationQueue';
-import ModerationDashboard from './pages/ModerationDashboard';
-import ModerationSettings from './pages/ModerationSettings';
+import ModerationQueue from './components/ModerationQueue';
+import ModerationDashboard from './components/ModerationDashboard';
+import ModerationSettings from './components/ModerationSettings';
 import UserManagement from './components/UserManagement';
+import ModerationAppeals from './components/ModerationAppeals';
 
 // Static Pages
 import AboutUs from './pages/static/AboutUs';
@@ -365,6 +366,14 @@ function AppRoutes() {
         element={
           <ModeratorRoute>
             <UserManagement />
+          </ModeratorRoute>
+        }
+      />
+      <Route
+        path="/moderation/appeals"
+        element={
+          <ModeratorRoute>
+            <ModerationAppeals />
           </ModeratorRoute>
         }
       />
