@@ -32,6 +32,7 @@ import Coaching from './pages/Coaching';
 import Pricing from './pages/Pricing';
 import ContactSupplier from './pages/ContactSupplier';
 import Quiz from './pages/Quiz';
+import CreateActivity from './pages/CreateActivity';
 import Start from './pages/Start';
 import AdminEditor from './pages/AdminEditor';
 import Supplier from './pages/Supplier';
@@ -42,6 +43,7 @@ import Users from './pages/Users';
 import ModerationQueue from './components/ModerationQueue';
 import ModerationDashboard from './components/ModerationDashboard';
 import ModerationSettings from './components/ModerationSettings';
+import ModerationActivitiesQueue from './components/ModerationActivitiesQueue';
 import UserManagement from './components/UserManagement';
 import ModerationAppeals from './components/ModerationAppeals';
 
@@ -297,6 +299,7 @@ function AppRoutes() {
       <Route path="/community" element={<RouteErrorBoundary><Community /></RouteErrorBoundary>} />
       <Route path="/users" element={<RouteErrorBoundary><Users /></RouteErrorBoundary>} />
       <Route path="/users/:username" element={<RouteErrorBoundary><UserProfile /></RouteErrorBoundary>} />
+      <Route path="/create-activity" element={<RouteErrorBoundary><CreateActivity /></RouteErrorBoundary>} />
       <Route path="/contact-supplier" element={<RouteErrorBoundary><ContactSupplier /></RouteErrorBoundary>} />
       <Route path="/quiz" element={<RouteErrorBoundary><Quiz /></RouteErrorBoundary>} />
       <Route path="/start" element={<RouteErrorBoundary><Start /></RouteErrorBoundary>} />
@@ -358,6 +361,14 @@ function AppRoutes() {
         element={
           <ModeratorRoute>
             <ModerationSettings />
+          </ModeratorRoute>
+        }
+      />
+      <Route
+        path="/moderation/activities"
+        element={
+          <ModeratorRoute>
+            <ModerationActivitiesQueue />
           </ModeratorRoute>
         }
       />

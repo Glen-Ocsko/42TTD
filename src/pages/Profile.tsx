@@ -30,6 +30,7 @@ interface Activity {
   activity: {
     id: string;
     title: string;
+    display_title?: string;
     description: string | null;
     category_tags: string[];
     difficulty: number;

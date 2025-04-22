@@ -13,6 +13,7 @@ export interface Post {
   activity?: {
     id?: string;
     title: string;
+    display_title?: string;
   };
   likes_count?: number;
   comments_count?: number;

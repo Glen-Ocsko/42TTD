@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate, useLocation } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import ActivityPosts from '../components/ActivityPosts';
-import AddToListButton from '../components/AddToListButton';
+import DynamicAddToListButton from '../components/DynamicAddToListButton';
 import RateActivityButton from '../components/RateActivityButton';
 import RatingDisplay from '../components/RatingDisplay';
 import DetailedRatings from '../components/DetailedRatings';
@@ -33,6 +33,7 @@ import {
 interface Activity {
   id: string;
   title: string;
+  display_title?: string;
   description: string;
   category_id: string;
   difficulty: number;
@@ -202,7 +203,7 @@ export default function ActivityDetail() {
 
           {/* Title and Description */}
           <div className="bg-white rounded-xl p-6 shadow-sm">
-            <h1 className="text-3xl font-bold mb-4">{activity.title}</h1>
+            <h1 className="text-3xl font-bold mb-4">{activity.display_title || activity.title}</h1>
             <p className="text-gray-600 leading-relaxed mb-4">
               {activity.description}
             </p>
@@ -221,7 +222,7 @@ export default function ActivityDetail() {
 
           <div className="flex flex-col sm:flex-row gap-4">
             <div className="flex-1">
-              <AddToListButton activityId={activity.id} />
+              <DynamicAddToListButton activityId={activity.id} />
             </div>
           </div>
 

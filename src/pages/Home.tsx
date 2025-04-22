@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useCurrentUser } from '../hooks/useCurrentUser';
+import { useUserRole } from '../contexts/UserRoleContext';
 import { 
   ChevronRight,
   ArrowRight,
@@ -14,7 +15,13 @@ import {
   Mail,
   Shield,
   Building2,
-  BadgeCheck
+  BadgeCheck,
+  Plus,
+  Sparkles,
+  Calendar,
+  Zap,
+  Lock,
+  Star
 } from 'lucide-react';
 import CommunityCarousel from '../components/CommunityCarousel';
 import TestimonialsCarousel from '../components/TestimonialsCarousel';
@@ -22,57 +29,266 @@ import ProgressTracker from '../components/ProgressTracker';
 
 export default function Home() {
   const { isAuthenticated } = useCurrentUser();
+  const { isPremium, isPro } = useUserRole();
   const navigate = useNavigate();
 
   if (isAuthenticated) {
     return (
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <ProgressTracker />
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* Left Column (2/3 width) */}
+          <div className="lg:col-span-2 space-y-6">
+            {/* Progress Tracker */}
+            <ProgressTracker />
 
-        <div className="grid gap-6 md:grid-cols-3">
-          <div 
-            onClick={() => navigate('/activities')}
-            className="bg-gradient-to-br from-[#FDBA4F] to-[#f59e0b] text-white rounded-xl p-6 cursor-pointer hover:shadow-lg transition-shadow"
-          >
-            <Target className="h-8 w-8 mb-4" />
-            <h3 className="text-xl font-bold mb-2">Browse Activities</h3>
-            <p className="text-white/90 mb-4">
-              Discover new activities to add to your list
-            </p>
-            <button className="flex items-center gap-2 text-sm bg-white/20 px-4 py-2 rounded-lg hover:bg-white/30">
-              Browse Now
-              <ChevronRight className="h-4 w-4" />
-            </button>
+            {/* Create Your Own Activity Button */}
+            <div 
+              onClick={() => navigate('/create-activity')}
+              className="bg-gradient-to-br from-purple-500 to-purple-700 text-white rounded-xl p-6 cursor-pointer hover:shadow-lg transition-shadow"
+            >
+              <div className="flex justify-between items-start">
+                <div>
+                  <div className="flex items-center gap-2 mb-2">
+                    <Plus className="h-6 w-6" />
+                    <h3 className="text-xl font-bold">Create Your Own Activity</h3>
+                  </div>
+                  <p className="text-white/90 mb-4">
+                    Have something unique in mind? Add it to your list!
+                  </p>
+                </div>
+                <div className="bg-white/20 p-2 rounded-full">
+                  <Star className="h-6 w-6" />
+                </div>
+              </div>
+              <button className="flex items-center gap-2 text-sm bg-white/20 px-4 py-2 rounded-lg hover:bg-white/30">
+                Create Now
+                <ChevronRight className="h-4 w-4" />
+              </button>
+            </div>
+
+            {/* Dashboard Tiles */}
+            <div className="grid gap-6 md:grid-cols-3">
+              <div 
+                onClick={() => navigate('/activities')}
+                className="bg-gradient-to-br from-[#FDBA4F] to-[#f59e0b] text-white rounded-xl p-6 cursor-pointer hover:shadow-lg transition-shadow"
+              >
+                <Target className="h-8 w-8 mb-4" />
+                <h3 className="text-xl font-bold mb-2">Browse Activities</h3>
+                <p className="text-white/90 mb-4">
+                  Discover new activities to add to your list
+                </p>
+                <button className="flex items-center gap-2 text-sm bg-white/20 px-4 py-2 rounded-lg hover:bg-white/30">
+                  Browse Now
+                  <ChevronRight className="h-4 w-4" />
+                </button>
+              </div>
+
+              <div 
+                onClick={() => navigate('/dashboard')}
+                className="bg-gradient-to-br from-[#22C55E] to-[#16A34A] text-white rounded-xl p-6 cursor-pointer hover:shadow-lg transition-shadow"
+              >
+                <CheckCircle2 className="h-8 w-8 mb-4" />
+                <h3 className="text-xl font-bold mb-2">Track Progress</h3>
+                <p className="text-white/90 mb-4">
+                  Update and manage your activities
+                </p>
+                <button className="flex items-center gap-2 text-sm bg-white/20 px-4 py-2 rounded-lg hover:bg-white/30">
+                  View Dashboard
+                  <ChevronRight className="h-4 w-4" />
+                </button>
+              </div>
+
+              <div 
+                onClick={() => navigate('/coaching')}
+                className={`bg-gradient-to-br ${isPremium || isPro ? 'from-[#8B5CF6] to-[#6D28D9]' : 'from-gray-400 to-gray-500'} text-white rounded-xl p-6 cursor-pointer hover:shadow-lg transition-shadow relative`}
+              >
+                <Clock className="h-8 w-8 mb-4" />
+                <h3 className="text-xl font-bold mb-2">Get Coaching</h3>
+                <p className="text-white/90 mb-4">
+                  Set reminders and track habits
+                </p>
+                {isPremium || isPro ? (
+                  <button className="flex items-center gap-2 text-sm bg-white/20 px-4 py-2 rounded-lg hover:bg-white/30">
+                    Start Now
+                    <ChevronRight className="h-4 w-4" />
+                  </button>
+                ) : (
+                  <div className="absolute inset-0 bg-black/30 rounded-xl flex items-center justify-center">
+                    <div className="bg-white/90 px-4 py-2 rounded-lg flex items-center gap-2">
+                      <Lock className="h-4 w-4 text-gray-700" />
+                      <span className="text-gray-800 font-medium">Premium Feature</span>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+            
+            {/* What's Your Next Adventure Tile */}
+            <div className="bg-gradient-to-br from-blue-500 to-blue-700 text-white rounded-xl p-8 cursor-pointer hover:shadow-lg transition-shadow"
+              onClick={() => navigate('/start')}
+            >
+              <div className="flex flex-col md:flex-row justify-between items-center gap-6">
+                <div>
+                  <h2 className="text-2xl md:text-3xl font-bold mb-2">What's your next adventure?</h2>
+                  <p className="text-white/90 text-lg mb-6">
+                    Browse the full list or click here for personalised ideas.
+                  </p>
+                  <button className="flex items-center gap-2 bg-white/20 px-6 py-3 rounded-lg hover:bg-white/30 text-white font-medium">
+                    <Sparkles className="h-5 w-5" />
+                    Need some inspiration?
+                    <ArrowRight className="h-5 w-5 ml-2" />
+                  </button>
+                </div>
+                <div className="bg-white/10 p-6 rounded-full">
+                  <Zap className="h-16 w-16 md:h-24 md:w-24" />
+                </div>
+              </div>
+            </div>
+
+            {/* Activity Stats */}
+            <div className="bg-white rounded-xl shadow-sm p-6">
+              <div className="flex items-center gap-2 mb-4">
+                <Star className="h-5 w-5 text-amber-500" />
+                <h3 className="text-lg font-bold">Your Activity Stats</h3>
+              </div>
+              <div className="flex flex-wrap gap-6">
+                <div>
+                  <span className="text-2xl font-bold text-blue-600">12</span>
+                  <p className="text-sm text-gray-600">Activities Created</p>
+                </div>
+                <div>
+                  <span className="text-2xl font-bold text-green-600">8</span>
+                  <p className="text-sm text-gray-600">Published</p>
+                </div>
+                <div>
+                  <span className="text-2xl font-bold text-purple-600">3</span>
+                  <p className="text-sm text-gray-600">Completed This Month</p>
+                </div>
+              </div>
+            </div>
           </div>
 
-          <div 
-            onClick={() => navigate('/dashboard')}
-            className="bg-gradient-to-br from-[#22C55E] to-[#16A34A] text-white rounded-xl p-6 cursor-pointer hover:shadow-lg transition-shadow"
-          >
-            <CheckCircle2 className="h-8 w-8 mb-4" />
-            <h3 className="text-xl font-bold mb-2">Track Progress</h3>
-            <p className="text-white/90 mb-4">
-              Update and manage your activities
-            </p>
-            <button className="flex items-center gap-2 text-sm bg-white/20 px-4 py-2 rounded-lg hover:bg-white/30">
-              View Dashboard
-              <ChevronRight className="h-4 w-4" />
-            </button>
-          </div>
-
-          <div 
-            onClick={() => navigate('/coaching')}
-            className="bg-gradient-to-br from-[#8B5CF6] to-[#6D28D9] text-white rounded-xl p-6 cursor-pointer hover:shadow-lg transition-shadow"
-          >
-            <Clock className="h-8 w-8 mb-4" />
-            <h3 className="text-xl font-bold mb-2">Get Coaching</h3>
-            <p className="text-white/90 mb-4">
-              Set reminders and track habits
-            </p>
-            <button className="flex items-center gap-2 text-sm bg-white/20 px-4 py-2 rounded-lg hover:bg-white/30">
-              Start Now
-              <ChevronRight className="h-4 w-4" />
-            </button>
+          {/* Right Column (1/3 width) */}
+          <div className="space-y-6">
+            {/* Upcoming Bookings */}
+            <div className="bg-white rounded-xl shadow-sm p-6">
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-2">
+                  <Calendar className="h-5 w-5 text-blue-600" />
+                  <h3 className="font-bold">Upcoming Bookings</h3>
+                </div>
+                <Link to="/profile?tab=bookings" className="text-sm text-blue-600 hover:underline flex items-center gap-1">
+                  View All
+                  <ChevronRight className="h-4 w-4" />
+                </Link>
+              </div>
+              
+              <div className="space-y-4">
+                <div className="border-l-4 border-blue-500 pl-3 py-1">
+                  <div className="flex justify-between">
+                    <p className="font-medium">Surfing Lesson</p>
+                    <span className="text-sm text-gray-500">Tomorrow</span>
+                  </div>
+                  <p className="text-sm text-gray-600">10:00 AM • Bondi Beach</p>
+                </div>
+                
+                <div className="border-l-4 border-blue-500 pl-3 py-1">
+                  <div className="flex justify-between">
+                    <p className="font-medium">Rock Climbing</p>
+                    <span className="text-sm text-gray-500">Next Week</span>
+                  </div>
+                  <p className="text-sm text-gray-600">2:30 PM • Indoor Climbing Center</p>
+                </div>
+                
+                <div className="border-l-4 border-gray-300 pl-3 py-1">
+                  <div className="flex justify-between">
+                    <p className="font-medium text-gray-500">No more bookings</p>
+                  </div>
+                  <p className="text-sm text-gray-500">Schedule something new!</p>
+                </div>
+              </div>
+            </div>
+            
+            {/* Mini Coaching Module */}
+            {(isPremium || isPro) ? (
+              <div className="bg-white rounded-xl shadow-sm p-6">
+                <div className="flex items-center gap-2 mb-4">
+                  <Zap className="h-5 w-5 text-purple-600" />
+                  <h3 className="font-bold">Coaching</h3>
+                </div>
+                
+                <div className="space-y-4">
+                  <div className="bg-purple-50 p-4 rounded-lg">
+                    <h4 className="font-medium text-purple-800 mb-2">Daily Habit</h4>
+                    <div className="flex justify-between items-center">
+                      <p className="text-sm text-purple-700">Morning Run</p>
+                      <span className="text-xs bg-purple-200 text-purple-800 px-2 py-1 rounded-full">15/30 days</span>
+                    </div>
+                    <div className="w-full bg-purple-200 rounded-full h-2 mt-2">
+                      <div className="bg-purple-600 h-2 rounded-full" style={{ width: '50%' }}></div>
+                    </div>
+                  </div>
+                  
+                  <Link to="/coaching" className="text-sm text-purple-600 hover:underline flex items-center gap-1">
+                    View all coaching
+                    <ChevronRight className="h-4 w-4" />
+                  </Link>
+                </div>
+              </div>
+            ) : (
+              <div className="bg-white rounded-xl shadow-sm p-6 relative overflow-hidden">
+                <div className="flex items-center gap-2 mb-4">
+                  <Zap className="h-5 w-5 text-purple-600" />
+                  <h3 className="font-bold">Coaching</h3>
+                </div>
+                
+                <div className="space-y-4 blur-sm">
+                  <div className="bg-purple-50 p-4 rounded-lg">
+                    <h4 className="font-medium text-purple-800 mb-2">Daily Habit</h4>
+                    <div className="flex justify-between items-center">
+                      <p className="text-sm text-purple-700">Morning Run</p>
+                      <span className="text-xs bg-purple-200 text-purple-800 px-2 py-1 rounded-full">15/30 days</span>
+                    </div>
+                    <div className="w-full bg-purple-200 rounded-full h-2 mt-2">
+                      <div className="bg-purple-600 h-2 rounded-full" style={{ width: '50%' }}></div>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="absolute inset-0 flex items-center justify-center bg-white/80">
+                  <div className="text-center">
+                    <Crown className="h-8 w-8 text-amber-500 mx-auto mb-2" />
+                    <p className="font-medium mb-2">Premium Feature</p>
+                    <Link to="/pricing" className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-amber-500 to-amber-600 text-white rounded-lg hover:from-amber-600 hover:to-amber-700">
+                      <Crown className="h-4 w-4" />
+                      <span>Upgrade Now</span>
+                    </Link>
+                  </div>
+                </div>
+              </div>
+            )}
+            
+            {/* Supplier Advert */}
+            <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl shadow-sm p-6 border border-blue-100">
+              <div className="flex items-center gap-3 mb-4">
+                <img 
+                  src="https://images.unsplash.com/photo-1517836357463-d25dfeac3438?auto=format&fit=crop&w=64&h=64" 
+                  alt="Fitness First" 
+                  className="w-12 h-12 rounded-full object-cover"
+                />
+                <div>
+                  <p className="text-xs text-blue-600 font-medium">Sponsored</p>
+                  <h3 className="font-bold">Fitness First</h3>
+                </div>
+              </div>
+              
+              <p className="text-gray-700 mb-4">Get 20% off your first month with code <span className="font-bold">42THINGS</span>. Perfect for your fitness goals!</p>
+              
+              <button className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+                Learn More
+                <ArrowRight className="h-4 w-4" />
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -84,7 +300,7 @@ export default function Home() {
       {/* Hero Section */}
       <div className="min-h-[80vh] bg-[url('https://images.unsplash.com/photo-1501785888041-af3ef285b470?auto=format&fit=crop&w=1600&q=80')] bg-cover bg-center bg-no-repeat relative">
         <div className="absolute inset-0 bg-black/50 z-10"></div>
-        
+
         <div className="relative z-20 min-h-[80vh] flex items-center justify-center">
           <div className="text-center px-4 py-24 sm:py-32">
             <h1 className="text-5xl sm:text-6xl font-bold text-white mb-6">

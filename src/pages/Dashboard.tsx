@@ -21,6 +21,7 @@ import { format } from 'date-fns';
 interface Activity {
   id: string;
   title: string;
+  display_title?: string;
   description: string | null;
   category_tags: string[];
   difficulty: number;
@@ -187,7 +188,7 @@ export default function Dashboard() {
         
         <div className="flex items-start justify-between mb-2">
           <Link to={`/activities/${activity.activity.id}`} className="hover:text-blue-600 transition-colors">
-            <h3 className="text-lg font-semibold">{activity.activity.title}</h3>
+            <h3 className="text-lg font-semibold">{activity.activity.display_title || activity.activity.title}</h3>
           </Link>
         </div>
 

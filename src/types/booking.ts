@@ -26,6 +26,7 @@ export interface SupplierBooking {
   ad_title?: string;
   activity_id?: string;
   activity_title?: string;
+  activity_display_title?: string;
   status: 'pending' | 'confirmed' | 'cancelled' | 'completed';
   message?: string;
   date: string;
@@ -44,6 +45,7 @@ export interface UserBooking {
   ad_title?: string;
   activity_id?: string;
   activity_title?: string;
+  activity_display_title?: string;
   status: 'pending' | 'confirmed' | 'cancelled' | 'completed';
   message?: string;
   date: string;

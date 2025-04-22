@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { Mail, Lock, AlertCircle, Eye, EyeOff } from 'lucide-react';
 import DemoButton from '../components/DemoButton';
@@ -11,6 +11,7 @@ export default function Login() {
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const { signIn } = useAuth();
+  const location = useLocation();
   const navigate = useNavigate();
 
   const validateForm = () => {
@@ -35,8 +36,11 @@ export default function Login() {
 
     setIsLoading(true);
     try {
-      await signIn(email, password);
-      navigate('/');
+      // Get the return URL from location state
+      const state = location.state as { returnTo?: string } | undefined;
+      const returnTo = state?.returnTo || '/';
+      
+      await signIn(email, password, returnTo);
     } catch (err: any) {
       if (err?.message?.includes('Invalid login credentials')) {
         setError('Invalid email or password. Please try again.');

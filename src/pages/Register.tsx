@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
 import { Mail, Lock, Star, Crown, Medal, AlertCircle, Check, Eye, EyeOff } from 'lucide-react';
@@ -64,6 +64,7 @@ export default function Register() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const { signUp } = useAuth();
+  const location = useLocation();
   const navigate = useNavigate();
 
   const handleEmailSignUp = async (e: React.FormEvent) => {
@@ -103,7 +104,11 @@ export default function Register() {
         }
       }
 
-      navigate('/onboarding');
+      // Get the return URL from location state
+      const state = location.state as { returnTo?: string } | undefined;
+      const returnTo = state?.returnTo || '/onboarding';
+      
+      navigate(returnTo);
     } catch (err) {
       console.error('Error signing up:', err);
       setError(err instanceof Error ? err.message : 'Failed to create account. Please try again.');
