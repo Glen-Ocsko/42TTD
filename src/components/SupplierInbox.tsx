@@ -10,7 +10,8 @@ import {
   Search,
   Tag,
   AlertTriangle,
-  CheckCircle2
+  CheckCircle2,
+  Shield
 } from 'lucide-react';
 import { format, formatDistanceToNow } from 'date-fns';
 
@@ -26,6 +27,7 @@ interface Conversation {
   ad_title?: string;
   activity_id?: string;
   activity_title?: string;
+  is_moderator_conversation?: boolean;
 }
 
 interface Message {
@@ -39,6 +41,7 @@ interface Message {
   ad_title?: string;
   activity_id?: string;
   activity_title?: string;
+  from_moderator?: boolean;
 }
 
 export default function SupplierInbox() {
@@ -75,7 +78,7 @@ export default function SupplierInbox() {
     try {
       setLoading(true);
       
-      const { data, error } = await supabase.rpc('get_user_conversations', {
+      const { data, error } = await supabase.rpc('get_user_conversations_with_moderator', {
         p_user_id: effectiveUserId
       });
       
@@ -99,6 +102,11 @@ export default function SupplierInbox() {
     try {
       setLoadingMessages(true);
       
+      if (!effectiveUserId) {
+        setMessages([]);
+        return;
+      }
+      
       // Parse the conversation ID to get user IDs
       const [user1, user2] = conversationId.split('-');
       const otherUserId = user1 === effectiveUserId ? user2 : user1;
@@ -115,6 +123,7 @@ export default function SupplierInbox() {
           read,
           ad_id,
           activity_id,
+          from_moderator,
           supplier_ads!left(title),
           activities!left(title)
         `)
@@ -125,18 +134,24 @@ export default function SupplierInbox() {
       if (error) throw error;
       
       // Transform data to include ad and activity titles
-      const transformedMessages = data?.map(msg => ({
-        id: msg.id,
-        sender_id: msg.sender_id,
-        receiver_id: msg.receiver_id,
-        message_text: msg.message_text,
-        timestamp: msg.timestamp,
-        read: msg.read,
-        ad_id: msg.ad_id,
-        ad_title: msg.supplier_ads?.title,
-        activity_id: msg.activity_id,
-        activity_title: msg.activities?.title
-      })) || [];
+      const transformedMessages = data
+        ?.filter(msg => 
+          (msg.sender_id === effectiveUserId && msg.receiver_id === otherUserId) || 
+          (msg.sender_id === otherUserId && msg.receiver_id === effectiveUserId)
+        )
+        .map(msg => ({
+          id: msg.id,
+          sender_id: msg.sender_id,
+          receiver_id: msg.receiver_id,
+          message_text: msg.message_text,
+          timestamp: msg.timestamp,
+          read: msg.read,
+          ad_id: msg.ad_id,
+          ad_title: msg.supplier_ads?.title,
+          activity_id: msg.activity_id,
+          activity_title: msg.activities?.title,
+          from_moderator: msg.from_moderator
+        })) || [];
       
       setMessages(transformedMessages);
       
@@ -163,7 +178,14 @@ export default function SupplierInbox() {
   };
 
   const sendMessage = async () => {
-    if (!newMessage.trim() || !selectedConversation) return;
+    if (!newMessage.trim() || !selectedConversation || !effectiveUserId) return;
+    
+    // Check if this is a moderator conversation
+    const conversation = conversations.find(c => c.id === selectedConversation);
+    if (conversation?.is_moderator_conversation) {
+      setError("You cannot reply to moderator messages");
+      return;
+    }
     
     setSending(true);
     try {
@@ -181,7 +203,8 @@ export default function SupplierInbox() {
           receiver_id: otherUserId,
           message_text: newMessage.trim(),
           ad_id: firstMessage?.ad_id,
-          activity_id: firstMessage?.activity_id
+          activity_id: firstMessage?.activity_id,
+          from_moderator: false
         });
       
       if (error) throw error;
@@ -238,7 +261,7 @@ export default function SupplierInbox() {
               {searchQuery ? 'No conversations match your search' : 'No conversations yet'}
             </div>
           ) : (
-            filteredConversations.map(conversation => (
+            filteredConversations.map((conversation) => (
               <button
                 key={conversation.id}
                 onClick={() => setSelectedConversation(conversation.id)}
@@ -247,7 +270,11 @@ export default function SupplierInbox() {
                 }`}
               >
                 <div className="flex items-center gap-3">
-                  {conversation.other_user_avatar ? (
+                  {conversation.is_moderator_conversation ? (
+                    <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                      <Shield className="h-5 w-5 text-blue-600" />
+                    </div>
+                  ) : conversation.other_user_avatar ? (
                     <img
                       src={conversation.other_user_avatar}
                       alt={conversation.other_user_name}
@@ -260,7 +287,9 @@ export default function SupplierInbox() {
                   )}
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between">
-                      <h3 className="font-medium truncate">{conversation.other_user_name}</h3>
+                      <h3 className="font-medium truncate">
+                        {conversation.is_moderator_conversation ? 'Moderation Team' : conversation.other_user_name}
+                      </h3>
                       <span className="text-xs text-gray-500">
                         {formatDistanceToNow(new Date(conversation.last_message_time), { addSuffix: true })}
                       </span>
@@ -270,6 +299,12 @@ export default function SupplierInbox() {
                       <div className="flex items-center gap-1 text-xs text-blue-600">
                         <Tag className="h-3 w-3" />
                         <span className="truncate">{conversation.ad_title || conversation.activity_title}</span>
+                      </div>
+                    )}
+                    {conversation.is_moderator_conversation && (
+                      <div className="flex items-center gap-1 text-xs text-blue-600">
+                        <Shield className="h-3 w-3" />
+                        <span>Moderation Message</span>
                       </div>
                     )}
                   </div>
@@ -299,7 +334,8 @@ export default function SupplierInbox() {
               ) : messages.length > 0 ? (
                 <div>
                   <h3 className="font-medium">
-                    {conversations.find(c => c.id === selectedConversation)?.other_user_name}
+                    {messages[0].from_moderator ? 'Moderation Team' : 
+                      conversations.find(c => c.id === selectedConversation)?.other_user_name}
                   </h3>
                   {messages[0].ad_title && (
                     <div className="flex items-center gap-1 text-sm text-blue-600">
@@ -311,6 +347,12 @@ export default function SupplierInbox() {
                     <div className="flex items-center gap-1 text-sm text-blue-600">
                       <Tag className="h-3 w-3" />
                       <span>{messages[0].activity_title}</span>
+                    </div>
+                  )}
+                  {messages.some(m => m.from_moderator) && (
+                    <div className="flex items-center gap-1 text-sm text-blue-600 mt-1">
+                      <Shield className="h-3 w-3" />
+                      <span>This conversation contains moderation messages</span>
                     </div>
                   )}
                 </div>
@@ -342,6 +384,7 @@ export default function SupplierInbox() {
               ) : (
                 messages.map(message => {
                   const isCurrentUser = message.sender_id === effectiveUserId;
+                  const isModeratorMessage = message.from_moderator;
                   
                   return (
                     <div
@@ -350,15 +393,27 @@ export default function SupplierInbox() {
                     >
                       <div
                         className={`max-w-[80%] rounded-lg px-4 py-2 ${
-                          isCurrentUser
+                          isModeratorMessage
+                            ? 'bg-blue-100 text-blue-800 border border-blue-200'
+                            : isCurrentUser
                             ? 'bg-blue-600 text-white'
                             : 'bg-gray-100 text-gray-800'
                         }`}
                       >
+                        {isModeratorMessage && (
+                          <div className="flex items-center gap-1 mb-1 text-blue-700 text-sm font-medium">
+                            <Shield className="h-4 w-4" />
+                            <span>Message from Moderator</span>
+                          </div>
+                        )}
                         <p>{message.message_text}</p>
                         <div
                           className={`text-xs mt-1 flex items-center gap-1 ${
-                            isCurrentUser ? 'text-blue-200' : 'text-gray-500'
+                            isModeratorMessage
+                              ? 'text-blue-600'
+                              : isCurrentUser 
+                              ? 'text-blue-200' 
+                              : 'text-gray-500'
                           }`}
                         >
                           <Clock className="h-3 w-3" />
@@ -377,32 +432,39 @@ export default function SupplierInbox() {
             
             {/* Message Input */}
             <div className="p-3 border-t">
-              <div className="flex gap-2">
-                <input
-                  type="text"
-                  value={newMessage}
-                  onChange={(e) => setNewMessage(e.target.value)}
-                  placeholder="Type your message..."
-                  className="flex-1 px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' && !e.shiftKey) {
-                      e.preventDefault();
-                      sendMessage();
-                    }
-                  }}
-                />
-                <button
-                  onClick={sendMessage}
-                  disabled={sending || !newMessage.trim()}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
-                >
-                  {sending ? (
-                    <Loader2 className="h-5 w-5 animate-spin" />
-                  ) : (
-                    <Send className="h-5 w-5" />
-                  )}
-                </button>
-              </div>
+              {conversations.find(c => c.id === selectedConversation)?.is_moderator_conversation ? (
+                <div className="bg-gray-100 p-3 rounded-lg text-center text-gray-600">
+                  <Shield className="h-5 w-5 mx-auto mb-2 text-blue-600" />
+                  <p>You cannot reply to moderation messages</p>
+                </div>
+              ) : (
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={newMessage}
+                    onChange={(e) => setNewMessage(e.target.value)}
+                    placeholder="Type your message..."
+                    className="flex-1 px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' && !e.shiftKey) {
+                        e.preventDefault();
+                        sendMessage();
+                      }
+                    }}
+                  />
+                  <button
+                    onClick={sendMessage}
+                    disabled={sending || !newMessage.trim()}
+                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
+                  >
+                    {sending ? (
+                      <Loader2 className="h-5 w-5 animate-spin" />
+                    ) : (
+                      <Send className="h-5 w-5" />
+                    )}
+                  </button>
+                </div>
+              )}
             </div>
           </>
         ) : (

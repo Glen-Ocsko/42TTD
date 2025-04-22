@@ -1,8 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { useCurrentUser } from '../hooks/useCurrentUser';
-import { ModerationMessage } from '../types/moderation';
-import { format } from 'date-fns';
 import { 
   Shield, 
   Loader2, 
@@ -13,6 +11,20 @@ import {
   Ban, 
   Trash2
 } from 'lucide-react';
+import { format } from 'date-fns';
+
+interface ModerationMessage {
+  id: string;
+  receiver_id: string;
+  sender_id?: string;
+  sender_username?: string;
+  action_id?: string;
+  action_type?: string;
+  message_text: string;
+  is_system: boolean;
+  read: boolean;
+  created_at: string;
+}
 
 export default function ModerationMessages() {
   const { userId } = useCurrentUser();
@@ -30,10 +42,10 @@ export default function ModerationMessages() {
     try {
       setLoading(true);
       
-      const { data, error } = await supabase
+      const { data, error: fetchError } = await supabase
         .rpc('get_user_moderation_messages', { user_id: userId });
       
-      if (error) throw error;
+      if (fetchError) throw fetchError;
       
       setMessages(data || []);
       

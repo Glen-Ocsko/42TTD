@@ -18,10 +18,12 @@ import {
   Smile,
   Image as ImageIcon,
   Loader2,
-  AlertTriangle
+  AlertTriangle,
+  Lock
 } from 'lucide-react';
 import { Dialog } from '@headlessui/react';
 import EmojiPicker from 'emoji-picker-react';
+import RestrictedContent from './RestrictedContent';
 
 interface ActivityPostProps {
   post: Post;
@@ -47,12 +49,69 @@ export default function ActivityPost({ post, onUpdate }: ActivityPostProps) {
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [gifUrl, setGifUrl] = useState('');
   const [error, setError] = useState('');
+  const [canView, setCanView] = useState(true);
 
   useEffect(() => {
-    if (showComments) {
+    // Check if the current user can view this post
+    checkPostVisibility();
+  }, [post.id, userId]);
+
+  useEffect(() => {
+    if (showComments && canView) {
       loadComments();
     }
-  }, [showComments]);
+  }, [showComments, canView]);
+
+  const checkPostVisibility = async () => {
+    // If the post is from the current user, they can always view it
+    if (post.user_id === userId) {
+      setCanView(true);
+      return;
+    }
+
+    // Check post visibility
+    try {
+      const { data, error } = await supabase
+        .from('activity_posts')
+        .select('visibility')
+        .eq('id', post.id)
+        .single();
+
+      if (error) {
+        console.error('Error checking post visibility:', error);
+        setCanView(false);
+        return;
+      }
+
+      // If post is public, anyone can view
+      if (data.visibility === 'public') {
+        setCanView(true);
+        return;
+      }
+
+      // If post is private, only the owner can view
+      if (data.visibility === 'private') {
+        setCanView(false);
+        return;
+      }
+
+      // If post is friends-only, check if the user is a friend
+      if (data.visibility === 'friends' && userId) {
+        const { data: followData } = await supabase
+          .rpc('get_follow_status', { 
+            user_id: userId, 
+            target_id: post.user_id 
+          });
+        
+        setCanView(followData === 'friends');
+      } else {
+        setCanView(false);
+      }
+    } catch (err) {
+      console.error('Error checking post visibility:', err);
+      setCanView(false);
+    }
+  };
 
   const loadComments = async () => {
     try {
@@ -283,6 +342,10 @@ export default function ActivityPost({ post, onUpdate }: ActivityPostProps) {
       return part;
     });
   };
+
+  if (!canView) {
+    return <RestrictedContent message="This post is private or restricted to friends only" showBackButton={false} />;
+  }
 
   return (
     <div className="bg-white rounded-xl shadow-sm overflow-hidden">

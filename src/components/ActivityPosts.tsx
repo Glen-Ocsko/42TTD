@@ -208,7 +208,7 @@ export default function ActivityPosts({ activity }: ActivityPostsProps) {
       <div className="space-y-6">
         {posts.map((post, index) => (
           <React.Fragment key={post.id}>
-            <ActivityPost key={post.id} post={post} />
+            <ActivityPost key={post.id} post={post} onUpdate={loadPosts} />
             
             {/* Insert ad after every 5 posts */}
             {(index + 1) % 5 === 0 && index < posts.length - 1 && (

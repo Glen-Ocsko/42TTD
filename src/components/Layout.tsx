@@ -16,7 +16,8 @@ import {
   Shield,
   Building2,
   BadgeCheck,
-  MessageSquare
+  MessageSquare,
+  Clock
 } from 'lucide-react';
 
 interface LayoutProps {
@@ -34,6 +35,7 @@ export default function Layout({ children }: LayoutProps) {
   const [isModerator, setIsModerator] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
   const [unreadModerationCount, setUnreadModerationCount] = useState(0);
+  const [isSuspended, setIsSuspended] = useState(false);
 
   useEffect(() => {
     if (user || (isDemoMode && demoUser)) {
@@ -41,6 +43,7 @@ export default function Layout({ children }: LayoutProps) {
       checkPendingRequests();
       checkModeratorStatus();
       checkUnreadModerationMessages();
+      checkSuspensionStatus();
       
       // Set up subscription for new messages
       const subscription = supabase
@@ -129,6 +132,20 @@ export default function Layout({ children }: LayoutProps) {
       setUnreadModerationCount(count || 0);
     } catch (err) {
       console.error('Error checking unread moderation messages:', err);
+    }
+  };
+
+  const checkSuspensionStatus = async () => {
+    if (isDemoMode) return;
+    
+    try {
+      const { data, error } = await supabase
+        .rpc('is_user_suspended', { user_id: user?.id });
+      
+      if (error) throw error;
+      setIsSuspended(data || false);
+    } catch (err) {
+      console.error('Error checking suspension status:', err);
     }
   };
 
@@ -233,6 +250,13 @@ export default function Layout({ children }: LayoutProps) {
 
               {isAuthenticated ? (
                 <>
+                  {isSuspended && (
+                    <div className="flex items-center gap-1 text-orange-600">
+                      <Clock className="h-5 w-5" />
+                      <span className="hidden md:inline">Suspended</span>
+                    </div>
+                  )}
+                  
                   {!isPremium && !isDemoMode && (
                     <Link
                       to="/pricing"

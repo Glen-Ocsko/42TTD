@@ -30,6 +30,7 @@ import { isNative } from '../lib/capacitor';
 import PrivacySettingsModal from './PrivacySettingsModal';
 import FollowRequestsModal from './FollowRequestsModal';
 import ModerationMessages from './ModerationMessages';
+import UserWarningBanner from './UserWarningBanner';
 
 interface Activity {
   id: string;
@@ -63,6 +64,30 @@ interface UserProfile {
   profile_bio: string | null;
 }
 
+interface Warning {
+  id: string;
+  action_type: string;
+  reason: string;
+  created_at: string;
+  moderator_username: string;
+  post_id?: string;
+  has_appeal: boolean;
+  appeal_status?: string;
+}
+
+interface Suspension {
+  id: string;
+  reason: string;
+  start_date: string;
+  end_date?: string;
+  is_permanent: boolean;
+  created_at: string;
+  moderator_username: string;
+  days_remaining?: number;
+  has_appeal: boolean;
+  appeal_status?: string;
+}
+
 export default function Profile() {
   const { userId, isDemoMode } = useCurrentUser();
   const { demoUser, setDemoAdmin, setDemoModerator } = useDemo();
@@ -77,6 +102,9 @@ export default function Profile() {
   const [showRequestsModal, setShowRequestsModal] = useState(false);
   const [pendingRequestsCount, setPendingRequestsCount] = useState(0);
   const [unreadModerationCount, setUnreadModerationCount] = useState(0);
+  const [warnings, setWarnings] = useState<Warning[]>([]);
+  const [suspension, setSuspension] = useState<Suspension | null>(null);
+  const [hideWarningBanner, setHideWarningBanner] = useState(false);
 
   useEffect(() => {
     if (isDemoMode && demoUser) {
@@ -102,6 +130,7 @@ export default function Profile() {
       loadActivities();
       checkPendingRequests();
       checkUnreadModerationMessages();
+      loadWarningsAndSuspensions();
     }
   }, [userId, isDemoMode, demoUser]);
 
@@ -181,9 +210,50 @@ export default function Profile() {
     }
   };
 
+  const loadWarningsAndSuspensions = async () => {
+    try {
+      // Load warnings
+      const { data: warningsData, error: warningsError } = await supabase
+        .rpc('get_user_warnings', { user_id: userId });
+      
+      if (warningsError) throw warningsError;
+      setWarnings(warningsData || []);
+      
+      // Load suspension info
+      const { data: suspensionData, error: suspensionError } = await supabase
+        .rpc('get_user_suspension_info', { user_id: userId });
+      
+      if (suspensionError) throw suspensionError;
+      
+      if (suspensionData && suspensionData.length > 0) {
+        // Check if suspension is still active
+        const currentSuspension = suspensionData[0];
+        
+        if (currentSuspension.is_permanent || 
+            (currentSuspension.end_date && new Date(currentSuspension.end_date) > new Date())) {
+          setSuspension(currentSuspension);
+        } else {
+          setSuspension(null);
+        }
+      } else {
+        setSuspension(null);
+      }
+    } catch (err) {
+      console.error('Error loading warnings and suspensions:', err);
+    }
+  };
+
   const handleEditComplete = () => {
     setEditing(false);
     loadProfile();
+  };
+
+  const canCreateContent = () => {
+    if (isDemoMode) return true;
+    if (!profile) return false;
+    
+    // Check if user is suspended or banned
+    return !profile.is_suspended && !profile.is_banned;
   };
 
   if (loading) {
@@ -196,6 +266,16 @@ export default function Profile() {
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-8">
+      {/* Warning Banner */}
+      {!hideWarningBanner && (warnings.length > 0 || suspension) && (
+        <UserWarningBanner 
+          warnings={warnings}
+          suspension={suspension || undefined}
+          userId={userId || ''}
+          onClose={() => setHideWarningBanner(true)}
+        />
+      )}
+
       {editing ? (
         <div className="bg-white rounded-xl shadow-sm p-6 mb-8">
           <div className="flex items-center justify-between mb-6">
@@ -293,6 +373,12 @@ export default function Profile() {
                   <div className="flex items-center gap-2 text-blue-600">
                     <Shield className="h-4 w-4" />
                     <span>{profile.is_admin ? 'Administrator' : 'Moderator'}</span>
+                  </div>
+                )}
+                {profile?.is_suspended && (
+                  <div className="flex items-center gap-2 text-orange-600">
+                    <Clock className="h-4 w-4" />
+                    <span>Account Suspended</span>
                   </div>
                 )}
               </div>
@@ -493,6 +579,7 @@ export default function Profile() {
                       <button
                         onClick={() => navigate('/activities')}
                         className="mt-4 px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                        disabled={!canCreateContent()}
                       >
                         Browse Activities
                       </button>

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate, useLocation } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
+import { useCurrentUser } from '../hooks/useCurrentUser';
 import ActivityPosts from './ActivityPosts';
 import AddToListButton from './AddToListButton';
 import RateActivityButton from './RateActivityButton';
@@ -9,6 +10,7 @@ import DetailedRatings from './DetailedRatings';
 import AdPlaceholder from './AdPlaceholder';
 import ActivityAdBlock from './ActivityAdBlock';
 import MessageSupplierButton from './MessageSupplierButton';
+import RestrictedContent from './RestrictedContent';
 import { shareActivity, isNative } from '../lib/capacitor';
 import { 
   Loader2, 
@@ -102,6 +104,7 @@ export default function ActivityDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
+  const { userId, isAuthenticated, isModerator } = useCurrentUser();
   const [activity, setActivity] = useState<Activity | null>(null);
   const [stats, setStats] = useState<ActivityStats | null>(null);
   const [loading, setLoading] = useState(true);
@@ -109,6 +112,7 @@ export default function ActivityDetail() {
   const [showDetails, setShowDetails] = useState(false);
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [isSharing, setIsSharing] = useState(false);
+  const [canView, setCanView] = useState(true);
 
   useEffect(() => {
     loadActivityAndStats();
@@ -139,9 +143,11 @@ export default function ActivityDetail() {
 
       setActivity(activityData);
       setStats(statsData);
+      setCanView(true);
     } catch (err) {
       console.error('Error loading activity:', err);
       setError(err instanceof Error ? err.message : 'Failed to load activity');
+      setCanView(false);
     } finally {
       setLoading(false);
     }
@@ -204,13 +210,12 @@ export default function ActivityDetail() {
     );
   }
 
-  if (error || !activity) {
+  if (error || !activity || !canView) {
     return (
       <div className="max-w-7xl mx-auto px-4 py-8">
-        <div className="flex items-center gap-2 bg-red-50 text-red-600 p-4 rounded-lg">
-          <AlertTriangle className="h-5 w-5 flex-shrink-0" />
-          <p>{error || 'Activity not found'}</p>
-        </div>
+        <RestrictedContent 
+          message={error || "This activity could not be found or you don't have permission to view it"} 
+        />
       </div>
     );
   }

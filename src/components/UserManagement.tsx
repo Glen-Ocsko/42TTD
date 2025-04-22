@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { useCurrentUser } from '../hooks/useCurrentUser';
 import { 
@@ -34,6 +35,7 @@ interface UserProfile {
 
 export default function UserManagement() {
   const { userId } = useCurrentUser();
+  const navigate = useNavigate();
   const [users, setUsers] = useState<UserProfile[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -126,18 +128,22 @@ export default function UserManagement() {
       switch (actionType) {
         case 'promote':
           const { error: promoteError } = await supabase
-            .rpc('promote_to_moderator', {
-              target_user_id: selectedUser.id
-            });
+            .from('profiles')
+            .update({
+              is_moderator: true
+            })
+            .eq('id', selectedUser.id);
           
           if (promoteError) throw promoteError;
           break;
           
         case 'demote':
           const { error: demoteError } = await supabase
-            .rpc('demote_moderator', {
-              target_user_id: selectedUser.id
-            });
+            .from('profiles')
+            .update({
+              is_moderator: false
+            })
+            .eq('id', selectedUser.id);
           
           if (demoteError) throw demoteError;
           break;
@@ -151,7 +157,7 @@ export default function UserManagement() {
           const { data: actionData, error: actionError } = await supabase
             .from('moderation_actions')
             .insert({
-              moderator_id: userId,
+              moderator_user_id: userId,
               target_user_id: selectedUser.id,
               action_type: 'suspension',
               reason: actionReason
@@ -166,11 +172,10 @@ export default function UserManagement() {
             .from('user_suspensions')
             .insert({
               user_id: selectedUser.id,
-              moderator_id: userId,
               reason: actionReason,
               start_date: new Date().toISOString(),
               end_date: endDate.toISOString(),
-              is_permanent: false
+              created_by: userId
             });
           
           if (suspensionError) throw suspensionError;
@@ -188,10 +193,12 @@ export default function UserManagement() {
           
           // Send message to user
           await supabase
-            .rpc('send_moderation_message', {
+            .from('moderation_messages')
+            .insert({
               receiver_id: selectedUser.id,
-              message_text: actionReason,
+              sender_id: userId,
               action_id: actionData.id,
+              message_text: actionReason,
               is_system: false
             });
           
@@ -202,7 +209,7 @@ export default function UserManagement() {
           const { data: banActionData, error: banActionError } = await supabase
             .from('moderation_actions')
             .insert({
-              moderator_id: userId,
+              moderator_user_id: userId,
               target_user_id: selectedUser.id,
               action_type: 'ban',
               reason: actionReason
@@ -217,9 +224,10 @@ export default function UserManagement() {
             .from('user_suspensions')
             .insert({
               user_id: selectedUser.id,
-              moderator_id: userId,
               reason: actionReason,
               start_date: new Date().toISOString(),
+              end_date: null,
+              created_by: userId,
               is_permanent: true
             });
           
@@ -238,10 +246,12 @@ export default function UserManagement() {
           
           // Send message to user
           await supabase
-            .rpc('send_moderation_message', {
+            .from('moderation_messages')
+            .insert({
               receiver_id: selectedUser.id,
-              message_text: actionReason,
+              sender_id: userId,
               action_id: banActionData.id,
+              message_text: actionReason,
               is_system: false
             });
           
@@ -263,7 +273,7 @@ export default function UserManagement() {
           const { data: unsuspendActionData, error: unsuspendActionError } = await supabase
             .from('moderation_actions')
             .insert({
-              moderator_id: userId,
+              moderator_user_id: userId,
               target_user_id: selectedUser.id,
               action_type: 'report_resolved',
               reason: 'Suspension lifted: ' + actionReason
@@ -275,10 +285,12 @@ export default function UserManagement() {
           
           // Send message to user
           await supabase
-            .rpc('send_moderation_message', {
+            .from('moderation_messages')
+            .insert({
               receiver_id: selectedUser.id,
-              message_text: 'Your account suspension has been lifted. ' + actionReason,
+              sender_id: userId,
               action_id: unsuspendActionData.id,
+              message_text: 'Your account suspension has been lifted. ' + actionReason,
               is_system: true
             });
           
@@ -344,7 +356,7 @@ export default function UserManagement() {
     }
   };
 
-  if (!isModerator) {
+  if (loading) {
     return (
       <div className="flex justify-center items-center min-h-screen">
         <Loader2 className="h-8 w-8 animate-spin text-blue-600" />

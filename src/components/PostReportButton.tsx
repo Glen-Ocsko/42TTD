@@ -46,6 +46,7 @@ export default function PostReportButton({
           user_id: userId,
           reason,
           extra_notes: notes || null,
+          status: 'pending',
           created_at: new Date().toISOString()
         });
 
