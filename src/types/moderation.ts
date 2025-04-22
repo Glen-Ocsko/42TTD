@@ -53,7 +53,7 @@ export interface ReportedPost {
   post_content: string;
   reason: string;
   extra_notes?: string;
-  status: 'open' | 'in_review' | 'resolved' | 'dismissed' | 'escalated';
+  status: 'pending' | 'in_review' | 'resolved' | 'dismissed' | 'escalated';
   created_at: string;
   image_url?: string;
 }
