@@ -2,6 +2,7 @@ import React, { createContext, useContext, useEffect, useState } from 'react';
 import { User } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabase';
 import { useDemo } from './DemoContext';
+import { useLocation, useNavigate } from 'react-router-dom';
 
 interface AuthContextType {
   user: User | null;
@@ -17,6 +18,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const { isDemoMode } = useDemo();
+  const location = useLocation();
+  const navigate = useNavigate();
 
   useEffect(() => {
     if (isDemoMode) {
@@ -40,14 +43,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return () => subscription.unsubscribe();
   }, [isDemoMode]);
 
-  const signIn = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
+  const signIn = async (email: string, password: string, redirectTo?: string) => {
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) throw error;
   };
 
-  const signUp = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signUp({ email, password });
+  const signUp = async (email: string, password: string, redirectTo?: string) => {
+    const { data, error } = await supabase.auth.signUp({ email, password });
     if (error) throw error;
+    
+    // Get return URL from location state or use provided redirectTo
+    const state = location.state as { returnTo?: string } | undefined;
+    const returnPath = redirectTo || state?.returnTo || '/onboarding';
+    
+    // Navigate to the return path if sign-up was successful
+    if (data.user) {
+      navigate(returnPath);
+    }
   };
 
   const signOut = async () => {
