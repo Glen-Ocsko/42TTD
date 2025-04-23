@@ -32,7 +32,7 @@ export default function HashtagsFollowingList({
     try {
       setLoading(true);
       const { data, error } = await supabase
-        .rpc('get_user_followed_hashtags', { user_id: userId });
+        .rpc('get_user_followed_hashtags', { p_user_id: userId });
 
       if (error) throw error;
       setFollowedHashtags(data || []);

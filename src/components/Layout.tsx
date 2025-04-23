@@ -5,6 +5,13 @@ import { useUserRole } from '../contexts/UserRoleContext';
 import { useDemo } from '../contexts/DemoContext';
 import { supabase } from '../lib/supabase';
 import DemoRoleSwitcher from './DemoRoleSwitcher';
+import ErrorBoundary from './ErrorBoundary';
+import RouteErrorBoundary from './RouteErrorBoundary';
+import ScrollToTop from './ScrollToTop';
+import NavigationHistoryButtons from './NavigationHistoryButtons';
+import { initializeApp } from '../lib/capacitor';
+import { useDeepLink } from '../hooks/useDeepLink';
+import OfflineNotice from './OfflineNotice';
 import { 
   LogOut, 
   User, 
@@ -175,7 +182,7 @@ export default function Layout({ children }: LayoutProps) {
             <div className="flex items-center">
               <Link to="/" className="flex items-center gap-2">
                 <img 
-                  src="https://i.imgur.com/QCANfth.png" 
+                  src="https://i.imgur.com/wZcjbN6.png" 
                   alt="42 Things To Do logo"
                   className="h-8 md:h-10"
                 />
@@ -328,7 +335,7 @@ export default function Layout({ children }: LayoutProps) {
                 <div className="flex gap-4">
                   <Link to="/" className="text-gray-400 hover:text-white">
                     <img 
-                      src="https://i.imgur.com/QCANfth.png" 
+                      src="https://i.imgur.com/wZcjbN6.png" 
                       alt="42 Things To Do logo"
                       className="h-6"
                     />

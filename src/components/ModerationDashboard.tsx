@@ -338,7 +338,7 @@ export default function ModerationDashboard() {
                             <div className="text-sm mb-2">
                               <span className="font-medium">Target:</span>{' '}
                               <Link 
-                                to={`/users/${action.target_user?.username}`}
+                                to={`/profile/${action.target_user?.username}`}
                                 className="text-blue-600 hover:underline"
                               >
                                 {action.target_user?.username || 'Unknown User'}

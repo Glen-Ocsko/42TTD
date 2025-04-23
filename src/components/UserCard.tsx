@@ -13,7 +13,7 @@ export default function UserCard({ user, showFollowButton = true }: UserCardProp
   return (
     <div className="bg-white rounded-lg shadow-sm p-4 hover:shadow-md transition-shadow">
       <div className="flex items-start gap-4">
-        <Link to={`/users/${user.username}`} className="flex-shrink-0">
+        <Link to={`/profile/${user.username}`} className="flex-shrink-0">
           {user.avatar_url ? (
             <img
               src={user.avatar_url}
@@ -29,7 +29,7 @@ export default function UserCard({ user, showFollowButton = true }: UserCardProp
         
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-1">
-            <Link to={`/users/${user.username}`} className="font-medium hover:text-blue-600 truncate">
+            <Link to={`/profile/${user.username}`} className="font-medium hover:text-blue-600 truncate">
               {user.username}
             </Link>
             {user.privacy_default !== 'public' && (

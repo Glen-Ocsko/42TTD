@@ -47,9 +47,13 @@ export default function ActivityAdBlock({
 
   useEffect(() => {
     // Check if we're online
-    setIsOffline(!navigator.onLine);
+    const checkOnlineStatus = () => {
+      const online = navigator.onLine;
+      setIsOffline(!online);
+      return online;
+    };
     
-    if (navigator.onLine) {
+    if (checkOnlineStatus()) {
       loadHiddenAds();
       loadRelevantAds();
     }
@@ -75,13 +79,13 @@ export default function ActivityAdBlock({
   }, [activityId, activityTitle, activityTags]);
 
   const loadHiddenAds = async () => {
-    if (!userId) {
+    if (!userId || !navigator.onLine) {
       setHiddenAds([]);
       return;
     }
     
     try {
-      const { data } = await safeUserQuery(
+      const { data, error } = await safeUserQuery(
         async (uid) => {
           return await supabase
             .from('ad_feedback')
@@ -91,6 +95,8 @@ export default function ActivityAdBlock({
         userId
       );
       
+      if (error) throw error;
+      
       setHiddenAds(data?.map(item => item.ad_id) || []);
     } catch (error) {
       console.error('Error loading hidden ads:', error);
@@ -99,7 +105,7 @@ export default function ActivityAdBlock({
   };
 
   const loadRelevantAds = async () => {
-    if (isOffline) {
+    if (isOffline || !navigator.onLine) {
       setLoading(false);
       return;
     }
@@ -165,10 +171,18 @@ export default function ActivityAdBlock({
       if (data && data.length > 0) {
         setAds(data);
         
-        // Track impressions for each ad
-        data.forEach(async (ad) => {
-          await supabase.rpc('increment_ad_impressions', { ad_id: ad.id });
-        });
+        // Only track impressions if we're online
+        if (navigator.onLine) {
+          try {
+            // Track impressions for each ad
+            await Promise.all(data.map(ad => 
+              supabase.rpc('increment_ad_impressions', { ad_id: ad.id })
+            ));
+          } catch (err) {
+            // Don't let impression tracking failure affect the UI
+            console.error('Failed to track impressions:', err);
+          }
+        }
         
         // Add to viewed ads
         const updatedViewedAds = [...viewedAds, ...data.map(ad => ad.id)].slice(-20); // Keep last 20
@@ -187,13 +201,21 @@ export default function ActivityAdBlock({
 
   const handleAdClick = async (ad: SupplierAd) => {
     try {
-      // Increment click count
-      await supabase.rpc('increment_ad_clicks', { ad_id: ad.id });
+      // Only track clicks if we're online
+      if (navigator.onLine) {
+        try {
+          // Increment click count
+          await supabase.rpc('increment_ad_clicks', { ad_id: ad.id });
+        } catch (err) {
+          // Don't let click tracking failure affect the UI
+          console.error('Failed to track click:', err);
+        }
+      }
       
       // Show ad details
       setSelectedAd(ad);
     } catch (error) {
-      console.error('Error tracking ad click:', error);
+      console.error('Error handling ad click:', error);
       // Still show the ad details even if tracking fails
       setSelectedAd(ad);
     }
@@ -211,7 +233,7 @@ export default function ActivityAdBlock({
   };
 
   const submitFeedback = async () => {
-    if (!feedbackReason || !selectedAd || !userId) return;
+    if (!feedbackReason || !selectedAd || !userId || !navigator.onLine) return;
     
     setSubmitting(true);
     try {

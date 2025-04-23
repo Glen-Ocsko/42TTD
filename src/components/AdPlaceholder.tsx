@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { supabase } from '../lib/supabase';
+import { supabase, fetchWithErrorHandling } from '../lib/supabase';
 import { useCurrentUser } from '../hooks/useCurrentUser';
 import { SupplierAd } from '../types/supplier';
 import SupplierAdCard from './SupplierAdCard';
@@ -20,14 +20,21 @@ export default function AdPlaceholder({ activityTags = [], compact = false }: Ad
 
   useEffect(() => {
     // Check if we're online
-    setIsOffline(!navigator.onLine);
-    
-    loadHiddenAds();
-    loadRandomAd();
+    const checkOnlineStatus = () => {
+      const online = navigator.onLine;
+      setIsOffline(!online);
+      return online;
+    };
+
+    if (checkOnlineStatus()) {
+      loadHiddenAds();
+      loadRandomAd();
+    }
     
     // Add event listeners for online/offline status
     const handleOnline = () => {
       setIsOffline(false);
+      loadHiddenAds();
       loadRandomAd();
     };
     
@@ -45,24 +52,27 @@ export default function AdPlaceholder({ activityTags = [], compact = false }: Ad
   }, [activityTags]);
 
   const loadHiddenAds = async () => {
-    if (!userId) return;
+    if (!userId || !navigator.onLine) return;
     
     try {
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from('ad_feedback')
         .select('ad_id')
         .eq('user_id', userId);
+      
+      if (error) throw error;
       
       if (data) {
         setHiddenAds(data.map(item => item.ad_id));
       }
     } catch (error) {
       console.error('Error loading hidden ads:', error);
+      // Don't set error state as this is not critical functionality
     }
   };
 
   const loadRandomAd = async () => {
-    if (isOffline) {
+    if (isOffline || !navigator.onLine) {
       setLoading(false);
       return;
     }
@@ -113,8 +123,15 @@ export default function AdPlaceholder({ activityTags = [], compact = false }: Ad
       if (data && data.length > 0) {
         setAd(data[0]);
         
-        // Track impression
-        await supabase.rpc('increment_ad_impressions', { ad_id: data[0].id });
+        // Only track impression if we're online
+        if (navigator.onLine) {
+          try {
+            await supabase.rpc('increment_ad_impressions', { ad_id: data[0].id });
+          } catch (err) {
+            // Don't let impression tracking failure affect the UI
+            console.error('Failed to track impression:', err);
+          }
+        }
         
         // Add to viewed ads
         const updatedViewedAds = [...viewedAds, data[0].id].slice(-10); // Keep last 10

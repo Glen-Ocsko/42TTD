@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { format } from 'date-fns';
 import { supabase } from '../lib/supabase';
 import { useCurrentUser } from '../hooks/useCurrentUser';
@@ -31,6 +31,11 @@ interface ActivityPostProps {
 }
 
 export default function ActivityPost({ post, onUpdate }: ActivityPostProps) {
+  // Early return if post or user is undefined
+  if (!post) {
+    return null;
+  }
+
   const navigate = useNavigate();
   const { userId, isAuthenticated } = useCurrentUser();
   const [liked, setLiked] = useState(post.user_liked || false);
@@ -141,9 +146,9 @@ export default function ActivityPost({ post, onUpdate }: ActivityPostProps) {
       const transformedComments = data?.map(comment => ({
         ...comment,
         user: {
-          username: comment.profiles.username,
-          avatar_url: comment.profiles.avatar_url,
-          full_name: comment.profiles.full_name
+          username: comment.profiles?.username || 'Unknown User',
+          avatar_url: comment.profiles?.avatar_url,
+          full_name: comment.profiles?.full_name
         }
       })) || [];
 
@@ -207,7 +212,7 @@ export default function ActivityPost({ post, onUpdate }: ActivityPostProps) {
           reason: reportReason,
           extra_notes: reportNotes || null
         });
-
+      
       if (error) throw error;
       setReportSuccess(true);
       
@@ -266,9 +271,9 @@ export default function ActivityPost({ post, onUpdate }: ActivityPostProps) {
         const newCommentObj = {
           ...data[0],
           user: {
-            username: data[0].profiles.username,
-            avatar_url: data[0].profiles.avatar_url,
-            full_name: data[0].profiles.full_name
+            username: data[0].profiles?.username || 'Unknown User',
+            avatar_url: data[0].profiles?.avatar_url,
+            full_name: data[0].profiles?.full_name
           }
         };
         
@@ -347,16 +352,19 @@ export default function ActivityPost({ post, onUpdate }: ActivityPostProps) {
     return <RestrictedContent message="This post is private or restricted to friends only" showBackButton={false} />;
   }
 
+  // Ensure post.user exists and has required properties
+  const user = post.user || { username: 'Unknown User', avatar_url: null };
+
   return (
     <div className="bg-white rounded-xl shadow-sm overflow-hidden">
       {/* Header */}
       <div className="p-4">
         <div className="flex items-start justify-between mb-3">
-          <Link to={`/users/${post.user.username}`} className="flex items-center gap-3">
-            {post.user.avatar_url ? (
+          <Link to={`/users/${user.username}`} className="flex items-center gap-3">
+            {user.avatar_url ? (
               <img
-                src={post.user.avatar_url}
-                alt={post.user.username}
+                src={user.avatar_url}
+                alt={user.username}
                 className="w-10 h-10 rounded-full object-cover"
               />
             ) : (
@@ -365,7 +373,7 @@ export default function ActivityPost({ post, onUpdate }: ActivityPostProps) {
               </div>
             )}
             <div>
-              <h3 className="font-medium">{post.user.username}</h3>
+              <h3 className="font-medium">{user.username}</h3>
               <p className="text-sm text-gray-500">
                 {format(new Date(post.created_at), 'MMM d, yyyy')}
               </p>
@@ -454,7 +462,7 @@ export default function ActivityPost({ post, onUpdate }: ActivityPostProps) {
               {comments.map(comment => (
                 <div key={comment.id} className="flex gap-3">
                   <div className="flex-shrink-0">
-                    {comment.user.avatar_url ? (
+                    {comment.user?.avatar_url ? (
                       <img
                         src={comment.user.avatar_url}
                         alt={comment.user.username}
@@ -469,10 +477,10 @@ export default function ActivityPost({ post, onUpdate }: ActivityPostProps) {
                   <div className="flex-1 bg-white p-3 rounded-lg shadow-sm">
                     <div className="flex items-center justify-between mb-1">
                       <Link 
-                        to={`/users/${comment.user.username}`}
+                        to={`/users/${comment.user?.username || 'unknown'}`}
                         className="font-medium text-sm hover:text-blue-600"
                       >
-                        {comment.user.username}
+                        {comment.user?.username || 'Unknown User'}
                       </Link>
                       <span className="text-xs text-gray-500">
                         {format(new Date(comment.created_at), 'MMM d, h:mm a')}
@@ -663,7 +671,6 @@ export default function ActivityPost({ post, onUpdate }: ActivityPostProps) {
 
                   <div className="flex gap-2 pt-4">
                     <button
-                      type="button"
                       onClick={() => {
                         setShowReportModal(false);
                         setReportReason('');
@@ -675,7 +682,6 @@ export default function ActivityPost({ post, onUpdate }: ActivityPostProps) {
                       Cancel
                     </button>
                     <button
-                      type="button"
                       onClick={handleReport}
                       disabled={!reportReason || submittingReport}
                       className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"

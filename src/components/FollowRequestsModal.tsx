@@ -157,7 +157,7 @@ export default function FollowRequestsModal({ isOpen, onClose }: FollowRequestsM
                       <button
                         onClick={() => {
                           onClose();
-                          navigate(`/users/${request.follower?.username}`);
+                          navigate(`/profile/${request.follower?.username}`);
                         }}
                         className="font-medium hover:text-blue-600"
                       >

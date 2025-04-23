@@ -128,10 +128,10 @@ export default function PostCommentsList({
           <div className="flex-1 bg-white p-3 rounded-lg shadow-sm">
             <div className="flex items-center justify-between mb-1">
               <Link 
-                to={`/users/${comment.user.username}`}
+                to={`/profile/${comment.user?.username || 'unknown'}`}
                 className="font-medium text-sm hover:text-blue-600"
               >
-                {comment.user.username}
+                {comment.user?.username || 'Unknown User'}
               </Link>
               <div className="flex items-center gap-2">
                 <span className="text-xs text-gray-500">

@@ -785,38 +785,42 @@ export default function ModerationQueue() {
                       onChange={(e) => setActionNotes(e.target.value)}
                       rows={2}
                       className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      placeholder="Add notes for other moderators..."
+                      placeholder="Add any internal notes about this action..."
                     />
                   </div>
 
-                  <div className="flex gap-3 pt-4">
+                  <div className="flex justify-end gap-3 mt-6">
                     <button
+                      type="button"
                       onClick={() => {
-                        setShowActionModal(false);
-                        setSelectedReport(null);
-                        setActionType('warning');
-                        setActionReason('');
-                        setActionNotes('');
-                        setSuspensionDays(1);
-                        setSendModeratorMessage(true);
+                        if (!processingAction) {
+                          setShowActionModal(false);
+                          setSelectedReport(null);
+                          setActionType('warning');
+                          setActionReason('');
+                          setActionNotes('');
+                          setSuspensionDays(1);
+                          setSendModeratorMessage(true);
+                        }
                       }}
-                      className="flex-1 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200"
+                      className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200"
                       disabled={processingAction}
                     >
                       Cancel
                     </button>
                     <button
+                      type="button"
                       onClick={handleAction}
+                      className="px-4 py-2 text-white bg-blue-600 rounded-lg hover:bg-blue-700 disabled:opacity-50"
                       disabled={processingAction || !actionReason}
-                      className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
                     >
                       {processingAction ? (
-                        <div className="flex items-center justify-center">
-                          <Loader2 className="h-5 w-5 animate-spin mr-2" />
+                        <div className="flex items-center gap-2">
+                          <Loader2 className="h-5 w-5 animate-spin" />
                           Processing...
                         </div>
                       ) : (
-                        'Confirm Action'
+                        'Take Action'
                       )}
                     </button>
                   </div>
