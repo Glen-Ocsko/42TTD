@@ -1,7 +1,9 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useCurrentUser } from '../hooks/useCurrentUser';
+import { usePageState } from '../hooks/usePageState';
 import { supabase } from '../lib/supabase';
+import CreateYourOwnActivityCard from '../components/CreateYourOwnActivityCard';
 import { 
   Search, 
   Filter, 
@@ -105,7 +107,6 @@ export default function Activities() {
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(true);
-  const [currentSort, setCurrentSort] = useState<SortOption>(SORT_OPTIONS[0]);
   const [searchQuery, setSearchQuery] = useState('');
   const [showFilterPanel, setShowFilterPanel] = useState(false);
   const [showSortDropdown, setShowSortDropdown] = useState(false);
@@ -113,6 +114,18 @@ export default function Activities() {
   const [page, setPage] = useState(0);
   const [filterCategories, setFilterCategories] = useState<FilterCategory[]>([]);
   const [selectedFilters, setSelectedFilters] = useState<{[key: string]: string[]}>({});
+  const [pageState, updatePageState] = usePageState({
+    currentSort: SORT_OPTIONS[0],
+    searchQuery: '',
+    showFilterPanel: false,
+    showSortDropdown: false,
+    viewMode: 'regular' as ViewMode,
+    page: 0,
+    filterCategories: [] as FilterCategory[],
+    selectedFilters: {} as {[key: string]: string[]}
+  });
+  
+  const { searchQuery: currentSearchQuery, showFilterPanel: currentShowFilterPanel, showSortDropdown: currentShowSortDropdown, viewMode: currentViewMode, page: currentPage, filterCategories: currentFilterCategories, selectedFilters: currentSelectedFilters } = pageState;
   const sortRef = useRef<HTMLDivElement>(null);
 
   const navigate = useNavigate();
@@ -123,7 +136,7 @@ export default function Activities() {
     if (observer.current) observer.current.disconnect();
     observer.current = new IntersectionObserver(entries => {
       if (entries[0].isIntersecting && hasMore) {
-        setPage(prev => prev + 1);
+        updatePageState({ page: page + 1 });
       }
     });
     if (node) observer.current.observe(node);
@@ -135,10 +148,10 @@ export default function Activities() {
 
   useEffect(() => {
     setActivities([]);
-    setPage(0);
+    updatePageState({ page: 0 });
     setHasMore(true);
     fetchActivities(0);
-  }, [selectedFilters, currentSort, searchQuery]);
+  }, [selectedFilters, pageState.currentSort, searchQuery]);
 
   useEffect(() => {
     if (page > 0) {
@@ -277,12 +290,12 @@ export default function Activities() {
       }
 
       // Apply sorting
-      if (currentSort.id === 'random') {
+      if (pageState.currentSort.id === 'random') {
         // For random sorting, we'll use a different approach
         query = query.order('created_at', { ascending: false });
       } else {
-        query = query.order(currentSort.field, {
-          ascending: currentSort.ascending
+        query = query.order(pageState.currentSort.field, {
+          ascending: pageState.currentSort.ascending
         });
       }
 
@@ -296,13 +309,13 @@ export default function Activities() {
 
       if (pageNumber === 0) {
         // For random sorting, shuffle the results
-        if (currentSort.id === 'random') {
+        if (pageState.currentSort.id === 'random') {
           setActivities([...(data || [])].sort(() => Math.random() - 0.5));
         } else {
           setActivities(data || []);
         }
       } else {
-        if (currentSort.id === 'random') {
+        if (pageState.currentSort.id === 'random') {
           setActivities(prev => [...prev, ...([...(data || [])].sort(() => Math.random() - 0.5))]);
         } else {
           setActivities(prev => [...prev, ...(data || [])]);
@@ -319,33 +332,33 @@ export default function Activities() {
   };
 
   const handleSearch = debounce((value: string) => {
-    setSearchQuery(value);
+    updatePageState({ searchQuery: value });
   }, 300);
 
   const handleFilterChange = (categoryId: string, optionId: string) => {
-    setFilterCategories(prev => {
-      return prev.map(category => {
-        if (category.id === categoryId) {
-          // For multi-select categories
-          if (category.multiSelect) {
-            const newSelected = category.selected.includes(optionId)
-              ? category.selected.filter(id => id !== optionId)
-              : [...category.selected, optionId];
-            
-            return { ...category, selected: newSelected };
-          } 
-          // For single-select categories
-          else {
-            const newSelected = category.selected.includes(optionId)
-              ? []
-              : [optionId];
-            
-            return { ...category, selected: newSelected };
-          }
+    const updatedCategories = filterCategories.map(category => {
+      if (category.id === categoryId) {
+        // For multi-select categories
+        if (category.multiSelect) {
+          const newSelected = category.selected.includes(optionId)
+            ? category.selected.filter(id => id !== optionId)
+            : [...category.selected, optionId];
+          
+          return { ...category, selected: newSelected };
+        } 
+        // For single-select categories
+        else {
+          const newSelected = category.selected.includes(optionId)
+            ? []
+            : [optionId];
+          
+          return { ...category, selected: newSelected };
         }
-        return category;
-      });
+      }
+      return category;
     });
+
+    updatePageState({ filterCategories: updatedCategories });
 
     // Update the selectedFilters object
     updateSelectedFilters();
@@ -360,19 +373,22 @@ export default function Activities() {
       }
     });
 
-    setSelectedFilters(newFilters);
+    updatePageState({ selectedFilters: newFilters });
   };
 
   const handleSortChange = (option: SortOption) => {
-    setCurrentSort(option);
-    setShowSortDropdown(false);
+    updatePageState({ 
+      currentSort: option,
+      showSortDropdown: false 
+    });
   };
 
   const handleClearFilters = () => {
-    setFilterCategories(prev => 
-      prev.map(category => ({ ...category, selected: [] }))
-    );
-    setSelectedFilters({});
+    const clearedCategories = filterCategories.map(category => ({ ...category, selected: [] }));
+    updatePageState({ 
+      filterCategories: clearedCategories,
+      selectedFilters: {} 
+    });
   };
 
   const handleRemoveFilter = (categoryId: string, optionId: string) => {
@@ -433,13 +449,14 @@ export default function Activities() {
                   type="text"
                   placeholder="Search activities..."
                   onChange={(e) => handleSearch(e.target.value)}
+                  value={searchQuery}
                   className="w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 />
               </div>
 
               {/* Filter Button */}
               <button
-                onClick={() => setShowFilterPanel(!showFilterPanel)}
+                onClick={() => updatePageState({ showFilterPanel: !showFilterPanel })}
                 className="flex items-center justify-center gap-2 px-4 py-2 bg-white rounded-lg border hover:bg-gray-50 transition-colors relative"
               >
                 <Filter className="h-5 w-5" />
@@ -459,7 +476,7 @@ export default function Activities() {
                 >
                   <div className="flex items-center gap-2">
                     <ArrowUpDown className="h-5 w-5" />
-                    <span>Sort: {currentSort.label}</span>
+                    <span>Sort: {pageState.currentSort.label}</span>
                   </div>
                   <ChevronDown className={`h-5 w-5 transition-transform ${showSortDropdown ? 'rotate-180' : ''}`} />
                 </button>
@@ -471,11 +488,11 @@ export default function Activities() {
                         key={option.id}
                         onClick={() => handleSortChange(option)}
                         className={`w-full text-left px-4 py-2 hover:bg-gray-50 flex items-center justify-between ${
-                          currentSort.id === option.id ? 'bg-blue-50 text-blue-600' : ''
+                          pageState.currentSort.id === option.id ? 'bg-blue-50 text-blue-600' : ''
                         }`}
                       >
                         <span>{option.label}</span>
-                        {currentSort.id === option.id && <Check className="h-4 w-4" />}
+                        {pageState.currentSort.id === option.id && <Check className="h-4 w-4" />}
                       </button>
                     ))}
                   </div>
@@ -581,6 +598,9 @@ export default function Activities() {
 
       {/* Activities Grid */}
       <div className={`grid ${getGridColsClass()} gap-4`}>
+        {/* Manually inserted card - always appears first regardless of filters/sorting */}
+        <CreateYourOwnActivityCard />
+        
         {loading ? (
           <div className="col-span-full flex justify-center items-center py-12">
             <Loader2 className="w-8 h-8 animate-spin text-gray-500" />
@@ -623,7 +643,6 @@ export default function Activities() {
                     <DynamicAddToListButton 
                       activityId={activity.id}
                       className="px-3 py-1.5 rounded-lg shadow-md hover:shadow-lg transform hover:-translate-y-0.5 transition-all flex items-center gap-1 text-xs font-medium z-20"
-                      iconOnly={true}
                       iconOnly={true}
                     />
                   </div>

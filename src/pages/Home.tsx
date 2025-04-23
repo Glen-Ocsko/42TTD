@@ -2,6 +2,7 @@ import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useCurrentUser } from '../hooks/useCurrentUser';
 import { useUserRole } from '../contexts/UserRoleContext';
+import CreateYourOwnActivityCard from '../components/CreateYourOwnActivityCard';
 import { 
   ChevronRight,
   ArrowRight,
@@ -41,30 +42,8 @@ export default function Home() {
             {/* Progress Tracker */}
             <ProgressTracker />
 
-            {/* Create Your Own Activity Button */}
-            <div 
-              onClick={() => navigate('/create-activity')}
-              className="bg-gradient-to-br from-purple-500 to-purple-700 text-white rounded-xl p-6 cursor-pointer hover:shadow-lg transition-shadow"
-            >
-              <div className="flex justify-between items-start">
-                <div>
-                  <div className="flex items-center gap-2 mb-2">
-                    <Plus className="h-6 w-6" />
-                    <h3 className="text-xl font-bold">Create Your Own Activity</h3>
-                  </div>
-                  <p className="text-white/90 mb-4">
-                    Have something unique in mind? Add it to your list!
-                  </p>
-                </div>
-                <div className="bg-white/20 p-2 rounded-full">
-                  <Star className="h-6 w-6" />
-                </div>
-              </div>
-              <button className="flex items-center gap-2 text-sm bg-white/20 px-4 py-2 rounded-lg hover:bg-white/30">
-                Create Now
-                <ChevronRight className="h-4 w-4" />
-              </button>
-            </div>
+            {/* Create Your Own Activity Card */}
+            <CreateYourOwnActivityCard />
 
             {/* Dashboard Tiles */}
             <div className="grid gap-6 md:grid-cols-3">

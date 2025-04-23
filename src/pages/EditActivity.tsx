@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { useCurrentUser } from '../hooks/useCurrentUser';
 import { supabase } from '../lib/supabase';
 import { 
-  Plus, 
+  Save, 
   Image as ImageIcon, 
   Tag, 
   Globe, 
@@ -15,7 +15,8 @@ import {
   ArrowLeft,
   Upload,
   Eye,
-  X
+  X,
+  AlertCircle
 } from 'lucide-react';
 
 interface Category {
@@ -23,7 +24,7 @@ interface Category {
   name: string;
 }
 
-interface CreateActivityFormData {
+interface ActivityFormData {
   title: string;
   display_title: string;
   description: string;
@@ -31,77 +32,104 @@ interface CreateActivityFormData {
   image_url: string;
   visibility: 'public' | 'friends' | 'private';
   propose_for_main_list: boolean;
-  add_to_my_list: boolean;
 }
 
-export default function CreateActivity() {
+export default function EditActivity() {
+  const { id } = useParams<{ id: string }>();
   const { userId, isAuthenticated } = useCurrentUser();
   const navigate = useNavigate();
   const fileInputRef = useRef<HTMLInputElement>(null);
   
-  const [formData, setFormData] = useState<CreateActivityFormData>({
+  const [formData, setFormData] = useState<ActivityFormData>({
     title: '',
     display_title: '',
     description: '',
     category_tags: [],
     image_url: '',
     visibility: 'public',
-    propose_for_main_list: false,
-    add_to_my_list: true
+    propose_for_main_list: false
   });
   
+  const [originalActivity, setOriginalActivity] = useState<any>(null);
   const [categories, setCategories] = useState<Category[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [uploadingImage, setUploadingImage] = useState(false);
+  const [wasSubmittedForReview, setWasSubmittedForReview] = useState(false);
+  const [isApproved, setIsApproved] = useState(false);
 
   useEffect(() => {
     // Redirect if not logged in
     if (!isAuthenticated) {
-      navigate('/login', { state: { returnTo: '/create-activity' } });
+      navigate('/login', { state: { returnTo: `/edit-activity/${id}` } });
       return;
     }
     
+    loadActivity();
     loadCategories();
-  }, [isAuthenticated, navigate]);
+  }, [isAuthenticated, id, navigate]);
 
-  // Auto-generate display title when title changes
-  useEffect(() => {
-    if (formData.title && !formData.display_title) {
-      // Generate a display title based on the first selected category
-      if (formData.category_tags.length > 0) {
-        const category = formData.category_tags[0];
-        let prefix = 'Try';
-        
-        if (category.includes('Adventure') || category.includes('Outdoor')) {
-          prefix = 'Go on a';
-        } else if (category.includes('Arts') || category.includes('Creative')) {
-          prefix = 'Create a';
-        } else if (category.includes('Travel')) {
-          prefix = 'Visit';
-        } else if (category.includes('Learn')) {
-          prefix = 'Learn';
-        }
-        
-        setFormData(prev => ({
-          ...prev,
-          display_title: `${prefix} ${prev.title}`
-        }));
-      } else {
-        // Default prefix if no category selected
-        setFormData(prev => ({
-          ...prev,
-          display_title: `Try ${prev.title}`
-        }));
+  const loadActivity = async () => {
+    try {
+      if (!id) {
+        navigate('/dashboard');
+        return;
       }
+
+      const { data, error } = await supabase
+        .from('custom_activities')
+        .select('*, activity_posts(visibility)')
+        .eq('id', id)
+        .eq('user_id', userId)
+        .single();
+
+      if (error) {
+        throw error;
+      }
+
+      if (!data) {
+        setError('Activity not found or you do not have permission to edit it');
+        return;
+      }
+
+      // Check if activity is already approved
+      if (data.moderation_status === 'approved' && data.proposed_for_main_list) {
+        setIsApproved(true);
+      }
+
+      // Set the original activity data
+      setOriginalActivity(data);
+      
+      // Set the form data
+      setFormData({
+        title: data.title || '',
+        display_title: data.display_title || '',
+        description: data.description || '',
+        category_tags: data.category_tags || [],
+        image_url: data.image_url || '',
+        visibility: data.activity_posts?.[0]?.visibility || 'public',
+        propose_for_main_list: data.proposed_for_main_list || false
+      });
+
+      // Track if it was submitted for review
+      setWasSubmittedForReview(data.proposed_for_main_list);
+      
+      // Set image preview if there's an image URL
+      if (data.image_url) {
+        setImagePreview(data.image_url);
+      }
+    } catch (err) {
+      console.error('Error loading activity:', err);
+      setError('Failed to load activity');
+    } finally {
+      setLoading(false);
     }
-  }, [formData.title, formData.category_tags]);
+  };
 
   const loadCategories = async () => {
     try {
-      setLoading(true);
       const { data, error } = await supabase
         .from('activity_categories')
         .select('id, name')
@@ -112,8 +140,6 @@ export default function CreateActivity() {
     } catch (err) {
       console.error('Error loading categories:', err);
       setError('Failed to load categories');
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -215,77 +241,54 @@ export default function CreateActivity() {
     setError('');
     
     try {
-      // Create the custom activity
-      const { data: customActivity, error: customActivityError } = await supabase
+      // Update the custom activity
+      const { error: updateError } = await supabase
         .from('custom_activities')
-        .insert({
-          user_id: userId,
+        .update({
           title: formData.title,
           display_title: formData.display_title || formData.title,
-          display_title: formData.display_title,
           description: formData.description,
           category_tags: formData.category_tags,
-          proposed_for_main_list: formData.propose_for_main_list
+          proposed_for_main_list: formData.propose_for_main_list,
+          // If it was previously submitted for review but now isn't, or if it was rejected and is being resubmitted
+          moderation_status: wasSubmittedForReview && !formData.propose_for_main_list ? 
+                            null : 
+                            (originalActivity?.moderation_status === 'rejected' && formData.propose_for_main_list) ? 
+                            'pending' : 
+                            originalActivity?.moderation_status
         })
-        .select()
-        .single();
+        .eq('id', id);
       
-      if (customActivityError) throw customActivityError;
+      if (updateError) throw updateError;
       
-      // If user wants to add to their list
-      if (formData.add_to_my_list) {
-        const { error: userActivityError } = await supabase
-          .from('user_activities')
-          .insert({
-            user_id: userId,
-            custom_activity_id: customActivity.id,
-            status: 'not_started',
-            progress: 0,
-            privacy: formData.visibility
-          });
+      // Update the associated post
+      if (originalActivity?.activity_posts?.length > 0) {
+        const postId = originalActivity.activity_posts[0].id;
         
-        if (userActivityError) throw userActivityError;
+        const { error: postError } = await supabase
+          .from('activity_posts')
+          .update({
+            content: `I've updated "${formData.display_title || formData.title}" in my list! ${formData.description}`,
+            image_url: formData.image_url || null,
+            visibility: formData.visibility
+          })
+          .eq('id', postId);
+        
+        if (postError) throw postError;
       }
       
-      // Create a post about the new activity
-      const { error: postError } = await supabase
-        .from('activity_posts')
-        .insert({
-          user_id: userId,
-          custom_activity_id: customActivity.id,
-          content: `I've added "${formData.display_title || formData.title}" to my list! ${formData.description}`,
-          image_url: formData.image_url || null,
-          status: 'not_started',
-          visibility: formData.visibility
-        });
+      // Show success toast
+      const toast = document.createElement('div');
+      toast.className = 'fixed bottom-4 left-1/2 transform -translate-x-1/2 bg-green-600 text-white px-4 py-2 rounded-lg shadow-lg z-50';
+      toast.textContent = 'Activity updated successfully!';
+      document.body.appendChild(toast);
+      setTimeout(() => toast.remove(), 3000);
       
-      if (postError) throw postError;
-      
-      // If proposing for main list, add a flag
-      if (formData.propose_for_main_list) {
-        // In a real implementation, this would add to a moderation queue
-        // For now, we'll just show a toast message
-        
-        // Show success toast
-        const toast = document.createElement('div');
-        toast.className = 'fixed bottom-4 left-1/2 transform -translate-x-1/2 bg-green-600 text-white px-4 py-2 rounded-lg shadow-lg z-50';
-        toast.textContent = 'Activity created and submitted for review!';
-        document.body.appendChild(toast);
-        setTimeout(() => toast.remove(), 5000);
-      } else {
-        // Show success toast
-        const toast = document.createElement('div');
-        toast.className = 'fixed bottom-4 left-1/2 transform -translate-x-1/2 bg-green-600 text-white px-4 py-2 rounded-lg shadow-lg z-50';
-        toast.textContent = 'Activity created successfully!';
-        document.body.appendChild(toast);
-        setTimeout(() => toast.remove(), 3000);
-      }
-      
-      // Redirect to profile or dashboard
+      // Redirect to dashboard
       navigate('/dashboard');
     } catch (err) {
-      console.error('Error creating activity:', err);
-      setError('Failed to create activity');
+      console.error('Error updating activity:', err);
+      setError('Failed to update activity');
     } finally {
       setSubmitting(false);
     }
@@ -299,23 +302,81 @@ export default function CreateActivity() {
     );
   }
 
+  if (isApproved) {
+    return (
+      <div className="max-w-4xl mx-auto px-4 py-8">
+        <button
+          onClick={() => navigate('/dashboard')}
+          className="flex items-center gap-2 text-gray-600 hover:text-gray-900 mb-6"
+        >
+          <ArrowLeft className="h-5 w-5" />
+          Back to Dashboard
+        </button>
+        
+        <div className="bg-blue-50 p-8 rounded-xl text-center">
+          <CheckCircle2 className="h-16 w-16 text-blue-600 mx-auto mb-4" />
+          <h1 className="text-2xl font-bold mb-4">This Activity Cannot Be Edited</h1>
+          <p className="text-lg text-gray-700 mb-6">
+            This activity has been approved and is now part of the official 42 Things To Do list.
+            Approved activities cannot be modified.
+          </p>
+          <button
+            onClick={() => navigate('/dashboard')}
+            className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+          >
+            Return to Dashboard
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="max-w-4xl mx-auto px-4 py-8">
       <button
-        onClick={() => navigate(-1)}
+        onClick={() => navigate('/dashboard')}
         className="flex items-center gap-2 text-gray-600 hover:text-gray-900 mb-6"
       >
         <ArrowLeft className="h-5 w-5" />
-        Back
+        Back to Dashboard
       </button>
       
       <div className="bg-white rounded-xl shadow-sm p-6 md:p-8">
-        <h1 className="text-3xl font-bold mb-6">Create Your Own Activity</h1>
+        <h1 className="text-3xl font-bold mb-6">Edit Activity</h1>
         
         {error && (
           <div className="mb-6 flex items-center gap-2 bg-red-50 text-red-600 p-4 rounded-lg">
             <AlertTriangle className="h-5 w-5 flex-shrink-0" />
             <p>{error}</p>
+          </div>
+        )}
+        
+        {wasSubmittedForReview && originalActivity?.moderation_status === 'pending' && (
+          <div className="mb-6 flex items-center gap-2 bg-amber-50 text-amber-600 p-4 rounded-lg">
+            <AlertCircle className="h-5 w-5 flex-shrink-0" />
+            <p>This activity is currently under review. Making changes will remove it from the review queue, and you'll need to resubmit it.</p>
+          </div>
+        )}
+        
+        {originalActivity?.moderation_status === 'requested_changes' && (
+          <div className="mb-6 flex items-start gap-2 bg-blue-50 text-blue-600 p-4 rounded-lg">
+            <AlertCircle className="h-5 w-5 flex-shrink-0 mt-0.5" />
+            <div>
+              <p className="font-medium">Changes Requested</p>
+              <p className="mt-1">{originalActivity.moderator_notes}</p>
+              <p className="mt-2 text-sm">Please make the requested changes and resubmit your activity.</p>
+            </div>
+          </div>
+        )}
+        
+        {originalActivity?.moderation_status === 'rejected' && (
+          <div className="mb-6 flex items-start gap-2 bg-red-50 text-red-600 p-4 rounded-lg">
+            <AlertCircle className="h-5 w-5 flex-shrink-0 mt-0.5" />
+            <div>
+              <p className="font-medium">Activity Rejected</p>
+              <p className="mt-1">{originalActivity.moderator_notes}</p>
+              <p className="mt-2 text-sm">You can make changes and resubmit your activity for review.</p>
+            </div>
           </div>
         )}
         
@@ -354,7 +415,7 @@ export default function CreateActivity() {
                 placeholder="e.g., Go Skydiving, Learn Spanish"
               />
               <p className="text-xs text-gray-500 mt-1">
-                How the activity will appear on cards (auto-generated if left empty)
+                How the activity will appear on cards
               </p>
             </div>
           </div>
@@ -529,17 +590,6 @@ export default function CreateActivity() {
             <label className="flex items-center gap-2 cursor-pointer">
               <input
                 type="checkbox"
-                name="add_to_my_list"
-                checked={formData.add_to_my_list}
-                onChange={handleCheckboxChange}
-                className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-              />
-              <span>Add to my list</span>
-            </label>
-            
-            <label className="flex items-center gap-2 cursor-pointer">
-              <input
-                type="checkbox"
                 name="propose_for_main_list"
                 checked={formData.propose_for_main_list}
                 onChange={handleCheckboxChange}
@@ -552,7 +602,7 @@ export default function CreateActivity() {
           <div className="flex gap-4 pt-4">
             <button
               type="button"
-              onClick={() => navigate(-1)}
+              onClick={() => navigate('/dashboard')}
               className="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
             >
               Cancel
@@ -566,12 +616,12 @@ export default function CreateActivity() {
               {submitting ? (
                 <>
                   <Loader2 className="h-5 w-5 animate-spin" />
-                  Creating...
+                  Saving...
                 </>
               ) : (
                 <>
-                  <Plus className="h-5 w-5" />
-                  Create Activity
+                  <Save className="h-5 w-5" />
+                  Save Changes
                 </>
               )}
             </button>

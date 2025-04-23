@@ -67,7 +67,30 @@ export interface UserHashtag {
   user_id: string;
   hashtag_id: string;
   hashtag_name: string;
+  hashtag_name: string;
   created_at: string;
 }
 
 export type FeedFilter = 'all' | 'following' | 'friends' | 'hashtags';
+
+export interface CustomActivity {
+  id: string;
+  user_id: string;
+  title: string;
+  display_title?: string;
+  description: string;
+  category_tags: string[];
+  created_at: string;
+  activity_posts?: {
+    id: string;
+    visibility: 'public' | 'friends' | 'private';
+  }[];
+  profiles?: {
+    username: string;
+    avatar_url: string | null;
+    full_name: string | null;
+  };
+  proposed_for_main_list?: boolean;
+  moderation_status?: 'pending' | 'approved' | 'rejected' | 'requested_changes';
+  moderator_notes?: string;
+}

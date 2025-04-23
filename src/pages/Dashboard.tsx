@@ -11,7 +11,12 @@ import {
   CheckCircle2,
   Loader2,
   Sparkles,
-  ArrowRight
+  ArrowRight,
+  Eye,
+  EyeOff,
+  X,
+  Users2,
+  Edit2
 } from 'lucide-react';
 import ActivityStatusDropdown from '../components/ActivityStatusDropdown';
 import ProgressTracker from '../components/ProgressTracker';
@@ -30,6 +35,12 @@ interface Activity {
   enjoyment: number;
   time: number;
   rating: number;
+  activity_posts?: {
+    visibility: 'public' | 'friends' | 'private';
+  }[];
+  proposed_for_main_list?: boolean;
+  moderation_status?: 'approved' | 'rejected' | 'requested_changes';
+  moderator_notes?: string;
 }
 
 interface UserActivity {
@@ -79,9 +90,13 @@ export default function Dashboard() {
   const [error, setError] = useState('');
   const [expandedSections, setExpandedSections] = useState<string[]>(['not-started', 'in-progress']);
   const [filteredStatus, setFilteredStatus] = useState<string | null>(null);
+  const [showHiddenActivities, setShowHiddenActivities] = useState(false);
+  const [customActivities, setCustomActivities] = useState<Activity[]>([]);
+  const [customActivityStats, setCustomActivityStats] = useState({ total: 0, published: 0 });
 
   useEffect(() => {
     loadUserActivities();
+    loadCustomActivities();
   }, [userId]);
 
   const loadUserActivities = async () => {
@@ -118,6 +133,31 @@ export default function Dashboard() {
     }
   };
 
+  const loadCustomActivities = async () => {
+    try {
+      // Load custom activities created by the user
+      const { data, error: activitiesError } = await supabase
+        .from('custom_activities')
+        .select('*, activity_posts(id, visibility)')
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false });
+
+      if (activitiesError) throw activitiesError;
+      
+      // Count published activities (those that have been approved for the main list)
+      const publishedCount = data?.filter(a => a.moderation_status === 'approved' && a.proposed_for_main_list).length || 0;
+      
+      setCustomActivities(data || []);
+      setCustomActivityStats({
+        total: data?.length || 0,
+        published: publishedCount
+      });
+    } catch (err) {
+      console.error('Error loading custom activities:', err);
+      setError('Failed to load custom activities');
+    }
+  };
+
   const toggleSection = (sectionId: string) => {
     setExpandedSections(prev =>
       prev.includes(sectionId)
@@ -132,7 +172,6 @@ export default function Dashboard() {
       const sectionId = status === 'not_started' ? 'not-started' : 
                         status === 'in_progress' ? 'in-progress' : 'completed';
       
-      // Ensure the section is expanded
       if (!expandedSections.includes(sectionId)) {
         setExpandedSections(prev => [...prev, sectionId]);
       }
@@ -143,7 +182,6 @@ export default function Dashboard() {
     if (!text) return '';
     if (text.length <= maxLength) return text;
     
-    // Find the nearest sentence end within reasonable distance of maxLength
     const nearestPeriod = text.indexOf('.', maxLength - 30);
     const nearestQuestion = text.indexOf('?', maxLength - 30);
     const nearestExclamation = text.indexOf('!', maxLength - 30);
@@ -168,7 +206,6 @@ export default function Dashboard() {
 
     return (
       <div className="bg-white p-4 rounded-lg shadow-sm">
-        {/* Image - Clickable to navigate to activity detail */}
         {activity.activity.image_url && (
           <div className="relative mb-4 group">
             <Link to={`/activities/${activity.activity.id}`} title="View Full Details">
@@ -247,7 +284,6 @@ export default function Dashboard() {
     );
   }
 
-  // Count activities by status
   const activityCounts = {
     not_started: activities.filter(a => a.status === 'not_started').length,
     in_progress: activities.filter(a => a.status === 'in_progress').length,
@@ -256,7 +292,6 @@ export default function Dashboard() {
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-8">
-      {/* Compact Progress Tracker */}
       <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl shadow-sm p-4 mb-6">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div>
@@ -274,6 +309,11 @@ export default function Dashboard() {
               </span>
               <span className="text-gray-600">activities completed</span>
             </div>
+            {customActivityStats.total > 0 && (
+              <div className="flex items-center gap-2 text-gray-600 mt-1">
+                <span>Activities Created: {customActivityStats.total} total | {customActivityStats.published} published</span>
+              </div>
+            )}
           </div>
           
           <div className="flex flex-wrap gap-3">
@@ -333,6 +373,22 @@ export default function Dashboard() {
         <h1 className="text-3xl font-bold">My Dashboard</h1>
         <div className="flex gap-2">
           <button
+            onClick={() => setShowHiddenActivities(!showHiddenActivities)}
+            className="flex items-center gap-2 bg-white border border-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-50"
+          >
+            {showHiddenActivities ? (
+              <>
+                <EyeOff className="h-5 w-5" />
+                Hide Private
+              </>
+            ) : (
+              <>
+                <Eye className="h-5 w-5" />
+                Show All
+              </>
+            )}
+          </button>
+          <button
             onClick={() => navigate('/activities')}
             className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
           >
@@ -355,13 +411,11 @@ export default function Dashboard() {
 
       <div className="space-y-6">
         {sections.map((section) => {
-          // Filter activities by section status and any additional filter
           const sectionActivities = activities.filter(
             (a) => a.status === section.status && 
                   (filteredStatus === null || a.status === filteredStatus)
           );
           
-          // If filtering is active and this section doesn't match, hide it
           if (filteredStatus !== null && section.status !== filteredStatus) {
             return null;
           }
@@ -402,6 +456,109 @@ export default function Dashboard() {
             </div>
           );
         })}
+
+        {/* Custom Activities Section */}
+        {customActivities.length > 0 && (
+          <div className="mt-10">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-xl font-bold">My Created Activities</h3>
+              <button
+                onClick={() => setShowHiddenActivities(!showHiddenActivities)}
+                className="flex items-center gap-2 text-gray-600 hover:text-gray-800"
+              >
+                {showHiddenActivities ? (
+                  <>
+                    <EyeOff className="h-5 w-5" />
+                    Hide Private
+                  </>
+                ) : (
+                  <>
+                    <Eye className="h-5 w-5" />
+                    Show All
+                  </>
+                )}
+              </button>
+            </div>
+            <div className="grid gap-6 md:grid-cols-2">
+              {customActivities
+                .filter(activity => {
+                  if (!showHiddenActivities) {
+                    const postVisibility = activity.activity_posts?.[0]?.visibility;
+                    return !postVisibility || postVisibility === 'public';
+                  }
+                  return true;
+                })
+                .map((activity) => (
+                  <div key={activity.id} className="bg-white rounded-lg shadow-sm overflow-hidden">
+                    <div className="p-4">
+                      <div className="flex justify-between items-start mb-2">
+                        <h3 className="font-bold text-lg">{activity.display_title || activity.title}</h3>
+                        <div className="flex items-center gap-1">
+                          {activity.moderation_status !== 'approved' && (
+                            <Link 
+                              to={`/edit-activity/${activity.id}`}
+                              className="p-1 text-gray-500 hover:text-blue-600"
+                              title="Edit activity"
+                            >
+                              <Edit2 className="h-4 w-4" />
+                            </Link>
+                          )}
+                          {activity.proposed_for_main_list && (
+                            <span className={`text-xs px-2 py-1 rounded-full ${
+                              activity.moderation_status === 'approved' ? 'bg-green-100 text-green-700' :
+                              activity.moderation_status === 'rejected' ? 'bg-red-100 text-red-700' :
+                              activity.moderation_status === 'requested_changes' ? 'bg-blue-100 text-blue-700' :
+                              'bg-yellow-100 text-yellow-700'
+                            }`}>
+                              {activity.moderation_status === 'approved' ? 'Published' :
+                               activity.moderation_status === 'rejected' ? 'Rejected' :
+                               activity.moderation_status === 'requested_changes' ? 'Changes Requested' :
+                               'Pending Review'}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                      
+                      <p className="text-gray-600 text-sm mb-3">{activity.description}</p>
+                      
+                      <div className="flex flex-wrap gap-2 mb-3">
+                        {activity.category_tags?.map((tag: string) => (
+                          <span key={tag} className="px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded-full">
+                            {tag}
+                          </span>
+                        ))}
+                      </div>
+                      
+                      {activity.activity_posts && activity.activity_posts.length > 0 && (
+                        <div className="text-sm text-gray-500 mb-2">
+                          Visibility: {activity.activity_posts[0].visibility === 'public' ? 'Public' : 
+                                      activity.activity_posts[0].visibility === 'friends' ? 'Friends Only' : 
+                                      'Private'}
+                        </div>
+                      )}
+                      
+                      {activity.moderation_status === 'requested_changes' && activity.moderator_notes && (
+                        <div className="bg-blue-50 p-3 rounded-lg mb-3">
+                          <p className="text-sm text-blue-700">
+                            <span className="font-medium">Requested Changes:</span> {activity.moderator_notes}
+                          </p>
+                        </div>
+                      )}
+                      
+                      {activity.moderation_status === 'rejected' && activity.moderator_notes && (
+                        <div className="bg-red-50 p-3 rounded-lg mb-3">
+                          <p className="text-sm text-red-700">
+                            <span className="font-medium">Rejection Reason:</span> {activity.moderator_notes}
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))
+              }
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

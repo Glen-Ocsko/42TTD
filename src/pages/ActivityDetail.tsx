@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate, useLocation } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
+import { usePageState } from '../hooks/usePageState';
+import { useCurrentUser } from '../hooks/useCurrentUser';
 import ActivityPosts from '../components/ActivityPosts';
 import DynamicAddToListButton from '../components/DynamicAddToListButton';
 import RateActivityButton from '../components/RateActivityButton';
@@ -96,10 +98,22 @@ export default function ActivityDetail() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showDetails, setShowDetails] = useState(false);
+  const [suppliers, setSuppliers] = useState<Supplier[]>([]);
+  const [isSharing, setIsSharing] = useState(false);
+  const [canView, setCanView] = useState(true);
+  const [pageState, updatePageState] = usePageState({
+    showDetails: false
+  });
 
   useEffect(() => {
     loadActivityAndStats();
+    loadRelatedSuppliers();
   }, [id]);
+  
+  // Use the saved state for showDetails
+  useEffect(() => {
+    setShowDetails(pageState.showDetails || false);
+  }, [pageState.showDetails]);
 
   const loadActivityAndStats = async () => {
     try {
@@ -299,7 +313,11 @@ export default function ActivityDetail() {
           {activity.adventurousness && activity.creativity && activity.fitness && activity.learning && (
             <div className="bg-white rounded-xl p-6 shadow-sm">
               <button
-                onClick={() => setShowDetails(!showDetails)}
+                onClick={() => {
+                  const newValue = !showDetails;
+                  setShowDetails(newValue);
+                  updatePageState({ showDetails: newValue });
+                }}
                 className="w-full flex items-center justify-between"
               >
                 <h2 className="text-lg font-semibold">Detailed Characteristics</h2>

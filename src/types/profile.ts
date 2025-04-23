@@ -8,6 +8,8 @@ export type HealthConsideration = 'heart_condition' | 'fear_of_heights' | 'limit
 
 export interface OnboardingFormData {
   full_name: string;
+  first_name?: string;
+  last_name?: string;
   username: string;
   age: number | null;
   location: string;
@@ -27,6 +29,8 @@ export interface OnboardingFormData {
 export interface UserProfile {
   id: string;
   username: string;
+  first_name?: string;
+  last_name?: string;
   full_name: string | null;
   avatar_url: string | null;
   email: string | null;

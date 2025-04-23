@@ -1,135 +1,157 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useCurrentUser } from '../hooks/useCurrentUser';
-import { useDemo } from '../contexts/DemoContext';
+import { useParams } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
+import { useCurrentUser } from '../hooks/useCurrentUser';
+import { usePageState } from '../hooks/usePageState';
+import { UserProfile as UserProfileType } from '../types/profile';
+import { Post } from '../types/social';
 import { 
   User,
-  MapPin,
-  Mail,
   Calendar,
-  Shield,
-  Edit2,
-  Save,
-  X,
-  Loader2,
-  AlertTriangle,
-  CreditCard,
-  Bell
+  MapPin,
+  Tag,
+  Loader2
 } from 'lucide-react';
+import ActivityPost from '../components/ActivityPost';
 import ActivityCard from '../components/ActivityCard';
-import ProgressTracker from '../components/ProgressTracker';
-import ProfileForm from '../components/ProfileForm';
-import UserBookings from '../components/UserBookings';
-import UserInbox from '../components/UserInbox';
-import PushNotificationSettings from '../components/PushNotificationSettings';
-import { isNative } from '../lib/capacitor';
+import ProfileStats from '../components/ProfileStats';
 
-interface Activity {
-  id: string;
-  activity: {
-    id: string;
-    title: string;
-    display_title?: string;
-    description: string | null;
-    category_tags: string[];
-    difficulty: number;
-    image_url: string | null;
-  };
-  status: 'not_started' | 'in_progress' | 'completed';
-  created_at: string;
-}
-
-interface UserProfile {
-  username: string;
-  full_name: string | null;
-  email: string | null;
-  avatar_url: string | null;
-  location: string | null;
-  age: number | null;
-  gender: 'male' | 'female' | 'non_binary' | 'prefer_not_to_say';
-  is_admin: boolean;
-}
-
-export default function Profile() {
-  const { userId, isDemoMode } = useCurrentUser();
-  const { demoUser, setDemoAdmin } = useDemo();
-  const navigate = useNavigate();
-  const [activities, setActivities] = useState<Activity[]>([]);
-  const [profile, setProfile] = useState<UserProfile | null>(null);
+export default function UserProfile() {
+  const { username } = useParams<{ username: string }>();
+  const { userId } = useCurrentUser();
+  const [profile, setProfile] = useState<UserProfileType | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [editing, setEditing] = useState(false);
-  const [activeTab, setActiveTab] = useState<'activities' | 'bookings' | 'messages' | 'settings'>('activities');
+  const [activeTab, setActiveTab] = useState<'posts' | 'activities' | 'replies' | 'likes' | 'media' | 'messages' | 'bookings'>('posts');
+  const [posts, setPosts] = useState<Post[]>([]);
+  const [activities, setActivities] = useState<any[]>([]);
+  const [replies, setReplies] = useState<Post[]>([]);
+  const [likes, setLikes] = useState<Post[]>([]);
+  const [media, setMedia] = useState<Post[]>([]);
+  const [messages, setMessages] = useState<any[]>([]);
+  const [bookings, setBookings] = useState<any[]>([]);
+  const [postCount, setPostCount] = useState(0);
+  const [tabLoading, setTabLoading] = useState(false);
+  const [pageState, updatePageState] = usePageState({
+    activeTab: 'posts'
+  });
 
   useEffect(() => {
-    if (isDemoMode && demoUser) {
-      setProfile({
-        username: demoUser.username,
-        full_name: demoUser.full_name,
-        email: demoUser.email,
-        avatar_url: demoUser.avatar_url,
-        location: demoUser.location,
-        age: demoUser.age,
-        gender: demoUser.gender,
-        is_admin: demoUser.is_admin
-      });
-      loadActivities();
-    } else if (userId) {
-      loadProfile();
-      loadActivities();
+    const fetchProfile = async () => {
+      try {
+        setLoading(true);
+        
+        const { data, error } = await supabase
+          .from('profiles')
+          .select(`
+            *,
+            post_count:activity_posts(count)
+          `)
+          .eq('username', username)
+          .single();
+          
+        if (error) throw error;
+        
+        if (!data) {
+          setError('Profile not found');
+          return;
+        }
+        
+        setProfile(data);
+        setPostCount(data.post_count?.[0]?.count || 0);
+        
+        // Load initial tab data
+        loadTabData(pageState.activeTab || 'posts');
+      } catch (err) {
+        console.error('Error fetching profile:', err);
+        setError(err instanceof Error ? err.message : 'An error occurred while fetching the profile');
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    if (username) {
+      fetchProfile();
     }
-  }, [userId, isDemoMode, demoUser]);
+  }, [username, pageState.activeTab]);
 
-  const loadProfile = async () => {
+  const loadTabData = async (tab: string) => {
+    if (!profile) return;
+    
+    setTabLoading(true);
+    
     try {
-      const { data, error: profileError } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', userId)
-        .single();
-
-      if (profileError) throw profileError;
-      setProfile(data);
+      switch (tab) {
+        case 'posts':
+          const { data: postsData } = await supabase
+            .from('activity_posts')
+            .select('*')
+            .eq('user_id', profile.id)
+            .order('created_at', { ascending: false });
+          setPosts(postsData || []);
+          break;
+          
+        case 'activities':
+          const { data: activitiesData } = await supabase
+            .from('user_activities')
+            .select('*')
+            .eq('user_id', profile.id)
+            .order('created_at', { ascending: false });
+          setActivities(activitiesData || []);
+          break;
+          
+        case 'replies':
+          const { data: repliesData } = await supabase
+            .from('post_comments')
+            .select('*')
+            .eq('user_id', profile.id)
+            .order('created_at', { ascending: false });
+          setReplies(repliesData || []);
+          break;
+          
+        case 'likes':
+          const { data: likesData } = await supabase
+            .from('post_likes')
+            .select('post_id, activity_posts(*)')
+            .eq('user_id', profile.id)
+            .order('created_at', { ascending: false });
+          setLikes(likesData?.map(like => like.activity_posts) || []);
+          break;
+          
+        case 'media':
+          const { data: mediaData } = await supabase
+            .from('activity_posts')
+            .select('*')
+            .eq('user_id', profile.id)
+            .not('image_url', 'is', null)
+            .order('created_at', { ascending: false });
+          setMedia(mediaData || []);
+          break;
+          
+        case 'messages':
+          // TODO: Implement messages loading
+          break;
+          
+        case 'bookings':
+          const { data: bookingsData } = await supabase
+            .from('bookings')
+            .select('*')
+            .eq('user_id', profile.id)
+            .order('created_at', { ascending: false });
+          setBookings(bookingsData || []);
+          break;
+      }
     } catch (err) {
-      console.error('Error loading profile:', err);
-      setError('Failed to load profile');
-    }
-  };
-
-  const loadActivities = async () => {
-    try {
-      const { data, error: activitiesError } = await supabase
-        .from('user_activities')
-        .select(`
-          id,
-          status,
-          created_at,
-          activity:activities (
-            id,
-            title,
-            description,
-            category_tags,
-            difficulty,
-            image_url
-          )
-        `)
-        .eq('user_id', isDemoMode ? '00000000-0000-0000-0000-000000000000' : userId)
-        .order('created_at', { ascending: false });
-
-      if (activitiesError) throw activitiesError;
-      setActivities(data || []);
-    } catch (err) {
-      console.error('Error loading activities:', err);
-      setError('Failed to load activities');
+      console.error(`Error loading ${tab} data:`, err);
     } finally {
-      setLoading(false);
+      setTabLoading(false);
     }
   };
 
-  const handleEditComplete = () => {
-    setEditing(false);
-    loadProfile();
+  const handleTabChange = (tab: 'posts' | 'activities' | 'replies' | 'likes' | 'media' | 'messages' | 'bookings') => {
+    setActiveTab(tab);
+    updatePageState({ activeTab: tab });
+    loadTabData(tab);
   };
 
   if (loading) {
@@ -140,239 +162,219 @@ export default function Profile() {
     );
   }
 
-  return (
-    <div className="max-w-7xl mx-auto px-4 py-8">
-      {editing ? (
-        <div className="bg-white rounded-xl shadow-sm p-6 mb-8">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-xl font-bold">Edit Profile</h2>
-            <button
-              onClick={() => setEditing(false)}
-              className="text-gray-500 hover:text-gray-700"
-            >
-              <X className="h-5 w-5" />
-            </button>
-          </div>
-          <ProfileForm isEditing={true} onComplete={handleEditComplete} />
+  if (error || !profile) {
+    return (
+      <div className="max-w-5xl mx-auto px-4 py-8">
+        <div className="bg-red-50 text-red-600 p-4 rounded-lg">
+          {error || 'Profile not found'}
         </div>
-      ) : (
-        <div className="flex flex-col lg:flex-row gap-8">
-          {/* Profile Column */}
-          <div className="lg:w-1/3 space-y-6">
-            {/* Profile Card */}
-            <div className="bg-white rounded-xl shadow-sm p-6">
-              <div className="flex items-center justify-between mb-6">
-                <h2 className="text-xl font-bold">Profile</h2>
-                <button
-                  onClick={() => setEditing(true)}
-                  className="flex items-center gap-2 text-sm text-gray-600 hover:text-gray-900"
-                >
-                  <Edit2 className="h-4 w-4" />
-                  Edit
-                </button>
-              </div>
+      </div>
+    );
+  }
 
-              <div className="flex items-center gap-4 mb-6">
-                {profile?.avatar_url ? (
-                  <img
-                    src={profile.avatar_url}
-                    alt={profile.username}
-                    className="w-20 h-20 rounded-full object-cover"
-                  />
-                ) : (
-                  <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center">
-                    <User className="h-8 w-8 text-gray-400" />
-                  </div>
-                )}
-                <div>
-                  <h3 className="font-medium text-lg">{profile?.username}</h3>
-                  {profile?.email && (
-                    <div className="flex items-center gap-2 text-gray-500">
-                      <Mail className="h-4 w-4" />
-                      <span>{profile.email}</span>
-                    </div>
-                  )}
+  const isOwnProfile = userId === profile.id;
+
+  return (
+    <div className="max-w-5xl mx-auto px-4 py-8">
+      <div className="bg-white rounded-lg shadow-md p-6 mb-6">
+        <div className="flex flex-col md:flex-row gap-6">
+          <div className="md:w-1/3">
+            <div className="flex items-center space-x-4 mb-4">
+              {profile.avatar_url ? (
+                <img
+                  src={profile.avatar_url}
+                  alt={profile.username || 'User avatar'}
+                  className="w-20 h-20 rounded-full object-cover"
+                />
+              ) : (
+                <div className="w-20 h-20 bg-gray-200 rounded-full flex items-center justify-center">
+                  <User className="h-10 w-10 text-gray-400" />
                 </div>
-              </div>
-
-              <div className="space-y-4">
-                {profile?.full_name && (
-                  <div className="flex items-center gap-2 text-gray-600">
-                    <User className="h-4 w-4" />
-                    <span>{profile.full_name}</span>
-                  </div>
+              )}
+              <div>
+                <h1 className="text-2xl font-bold">{profile.username}</h1>
+                {profile.full_name && (
+                  <p className="text-gray-600">{profile.full_name} • <span>{postCount} posts</span></p>
                 )}
-                {profile?.location && (
-                  <div className="flex items-center gap-2 text-gray-600">
+                {profile.location && (
+                  <div className="flex items-center gap-1 text-gray-500 mt-1">
                     <MapPin className="h-4 w-4" />
                     <span>{profile.location}</span>
                   </div>
                 )}
-                {profile?.age && (
-                  <div className="flex items-center gap-2 text-gray-600">
-                    <Calendar className="h-4 w-4" />
-                    <span>{profile.age} years old</span>
-                  </div>
-                )}
               </div>
             </div>
 
-            {/* Progress Card */}
-            <ProgressTracker />
-
-            {/* Notification Settings (Mobile Only) */}
-            {isNative && (
-              <PushNotificationSettings />
-            )}
-
-            {/* Demo Admin Toggle */}
-            {isDemoMode && demoUser && (
-              <div className="bg-white rounded-xl shadow-sm p-6">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Shield className="h-5 w-5 text-blue-600" />
-                    <h3 className="font-medium">Admin Access</h3>
-                  </div>
-                  <button
-                    onClick={() => setDemoAdmin(!demoUser.is_admin)}
-                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                      demoUser.is_admin ? 'bg-blue-600' : 'bg-gray-200'
-                    }`}
-                  >
-                    <span
-                      className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                        demoUser.is_admin ? 'translate-x-6' : 'translate-x-1'
-                      }`}
-                    />
-                  </button>
-                </div>
-                <p className="mt-2 text-sm text-gray-500">
-                  Toggle admin access to test administrative features
-                </p>
+            {profile.profile_bio && (
+              <div className="mb-4">
+                <h2 className="text-lg font-semibold mb-2">About</h2>
+                <p className="text-gray-700">{profile.profile_bio}</p>
               </div>
             )}
-          </div>
 
-          {/* Content Column */}
-          <div className="lg:w-2/3 space-y-6">
-            {/* Tabs */}
-            <div className="border-b">
-              <nav className="flex -mb-px">
-                <button
-                  onClick={() => setActiveTab('activities')}
-                  className={`py-4 px-6 font-medium text-sm border-b-2 ${
-                    activeTab === 'activities'
-                      ? 'border-blue-500 text-blue-600'
-                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                  }`}
-                >
-                  My Activities
-                </button>
-                <button
-                  onClick={() => setActiveTab('bookings')}
-                  className={`py-4 px-6 font-medium text-sm border-b-2 ${
-                    activeTab === 'bookings'
-                      ? 'border-blue-500 text-blue-600'
-                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                  }`}
-                >
-                  <div className="flex items-center gap-2">
-                    <CreditCard className="h-5 w-5" />
-                    <span>My Bookings</span>
-                  </div>
-                </button>
-                <button
-                  onClick={() => setActiveTab('messages')}
-                  className={`py-4 px-6 font-medium text-sm border-b-2 ${
-                    activeTab === 'messages'
-                      ? 'border-blue-500 text-blue-600'
-                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                  }`}
-                >
-                  <div className="flex items-center gap-2">
-                    <Mail className="h-5 w-5" />
-                    <span>Messages</span>
-                  </div>
-                </button>
-                <button
-                  onClick={() => setActiveTab('settings')}
-                  className={`py-4 px-6 font-medium text-sm border-b-2 ${
-                    activeTab === 'settings'
-                      ? 'border-blue-500 text-blue-600'
-                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                  }`}
-                >
-                  <div className="flex items-center gap-2">
-                    <Bell className="h-5 w-5" />
-                    <span>Notifications</span>
-                  </div>
-                </button>
-              </nav>
-            </div>
-
-            {/* Tab Content */}
-            {activeTab === 'activities' && (
-              <div>
-                <h2 className="text-2xl font-bold mb-6">My Activities</h2>
-                <div className="grid gap-6 md:grid-cols-2">
-                  {activities.map((activity) => (
-                    <ActivityCard
-                      key={activity.id}
-                      activity={activity.activity}
-                      isOnList={true}
-                    />
-                  ))}
-                  {activities.length === 0 && (
-                    <div className="col-span-2 text-center py-12 bg-gray-50 rounded-lg">
-                      <p className="text-gray-500">No activities added yet</p>
-                      <button
-                        onClick={() => navigate('/activities')}
-                        className="mt-4 px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+            <div className="grid grid-cols-1 gap-4 mt-4">
+              {profile.interests && profile.interests.length > 0 && (
+                <div>
+                  <h3 className="font-medium text-gray-700 mb-2">Interests</h3>
+                  <div className="flex flex-wrap gap-2">
+                    {profile.interests.map((interest, index) => (
+                      <span
+                        key={index}
+                        className="bg-blue-100 text-blue-800 text-sm px-2 py-1 rounded-full flex items-center gap-1"
                       >
-                        Browse Activities
-                      </button>
+                        <Tag className="h-3 w-3" />
+                        {interest}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+              
+              {profile.created_at && (
+                <div>
+                  <h3 className="font-medium text-gray-700 mb-2">Member Since</h3>
+                  <div className="flex items-center gap-1 text-gray-600">
+                    <Calendar className="h-4 w-4" />
+                    <span>{new Date(profile.created_at).toLocaleDateString()}</span>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+          
+          <div className="md:w-2/3">
+            <ProfileStats userId={profile.id} isOwnProfile={isOwnProfile} />
+          </div>
+        </div>
+      </div>
+
+      <div className="bg-white rounded-lg shadow-md overflow-hidden">
+        <div className="border-b">
+          <nav className="flex">
+            <button
+              onClick={() => handleTabChange('posts')}
+              className={`px-4 py-3 text-sm font-medium ${
+                activeTab === 'posts'
+                  ? 'border-b-2 border-blue-600 text-blue-600'
+                  : 'text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              Posts
+            </button>
+            <button
+              onClick={() => handleTabChange('activities')}
+              className={`px-4 py-3 text-sm font-medium ${
+                activeTab === 'activities'
+                  ? 'border-b-2 border-blue-600 text-blue-600'
+                  : 'text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              Activities
+            </button>
+            <button
+              onClick={() => handleTabChange('media')}
+              className={`px-4 py-3 text-sm font-medium ${
+                activeTab === 'media'
+                  ? 'border-b-2 border-blue-600 text-blue-600'
+                  : 'text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              Media
+            </button>
+            <button
+              onClick={() => handleTabChange('likes')}
+              className={`px-4 py-3 text-sm font-medium ${
+                activeTab === 'likes'
+                  ? 'border-b-2 border-blue-600 text-blue-600'
+                  : 'text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              Likes
+            </button>
+          </nav>
+        </div>
+
+        <div className="p-4">
+          {tabLoading ? (
+            <div className="flex justify-center py-8">
+              <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
+            </div>
+          ) : (
+            <>
+              {activeTab === 'posts' && (
+                <div className="space-y-4">
+                  {posts.length > 0 ? (
+                    posts.map(post => (
+                      <ActivityPost key={post.id} post={post} />
+                    ))
+                  ) : (
+                    <div className="text-center py-8 text-gray-500">
+                      No posts yet
                     </div>
                   )}
                 </div>
-              </div>
-            )}
+              )}
 
-            {activeTab === 'bookings' && (
-              <UserBookings />
-            )}
-
-            {activeTab === 'messages' && (
-              <UserInbox />
-            )}
-
-            {activeTab === 'settings' && (
-              <div>
-                <h2 className="text-2xl font-bold mb-6">Notification Settings</h2>
-                <div className="space-y-6">
-                  <PushNotificationSettings />
-                  
-                  <div className="p-4 bg-white rounded-lg shadow-sm">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <Mail className="h-5 w-5 text-gray-500" />
-                        <span className="font-medium">Email Notifications</span>
-                      </div>
-                      <button
-                        className="relative inline-flex h-6 w-11 items-center rounded-full bg-blue-600"
-                      >
-                        <span className="inline-block h-4 w-4 transform rounded-full bg-white translate-x-6" />
-                      </button>
+              {activeTab === 'activities' && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {activities.length > 0 ? (
+                    activities.map(activity => (
+                      <ActivityCard key={activity.id} activity={activity} />
+                    ))
+                  ) : (
+                    <div className="text-center py-8 text-gray-500 col-span-2">
+                      No activities yet
                     </div>
-                    <p className="mt-2 text-sm text-gray-500">
-                      Receive email notifications about messages, bookings, and activity reminders.
-                    </p>
-                  </div>
+                  )}
                 </div>
-              </div>
-            )}
-          </div>
+              )}
+
+              {activeTab === 'media' && (
+                <div className="space-y-4">
+                  {media.length > 0 ? (
+                    media.map(post => (
+                      <div key={post.id} className="mb-4">
+                        {post.image_url && (
+                          <div className="rounded-lg overflow-hidden mb-2">
+                            <img 
+                              src={post.image_url} 
+                              alt="Post media" 
+                              className="w-full object-cover"
+                              onError={(e) => {
+                                const target = e.target as HTMLImageElement;
+                                target.src = 'https://via.placeholder.com/800x600?text=Image+Error';
+                              }}
+                            />
+                          </div>
+                        )}
+                        <ActivityPost post={post} />
+                      </div>
+                    ))
+                  ) : (
+                    <div className="text-center py-8 text-gray-500">
+                      No media posts yet
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {activeTab === 'likes' && (
+                <div className="space-y-4">
+                  {likes.length > 0 ? (
+                    likes.map(post => (
+                      <ActivityPost key={post.id} post={post} />
+                    ))
+                  ) : (
+                    <div className="text-center py-8 text-gray-500">
+                      No liked posts yet
+                    </div>
+                  )}
+                </div>
+              )}
+            </>
+          )}
         </div>
-      )}
+      </div>
     </div>
   );
 }

@@ -33,6 +33,7 @@ import Pricing from './pages/Pricing';
 import ContactSupplier from './pages/ContactSupplier';
 import Quiz from './pages/Quiz';
 import CreateActivity from './pages/CreateActivity';
+import EditActivity from './pages/EditActivity';
 import Start from './pages/Start';
 import AdminEditor from './pages/AdminEditor';
 import Supplier from './pages/Supplier';
@@ -300,7 +301,10 @@ function AppRoutes() {
       <Route path="/users" element={<RouteErrorBoundary><Users /></RouteErrorBoundary>} />
       <Route path="/users/:username" element={<RouteErrorBoundary><UserProfile /></RouteErrorBoundary>} />
       <Route path="/create-activity" element={<RouteErrorBoundary><CreateActivity /></RouteErrorBoundary>} />
+      <Route path="/profile/:username" element={<RouteErrorBoundary><Profile /></RouteErrorBoundary>} />
+      <Route path="/edit-activity/:id" element={<RouteErrorBoundary><EditActivity /></RouteErrorBoundary>} />
       <Route path="/contact-supplier" element={<RouteErrorBoundary><ContactSupplier /></RouteErrorBoundary>} />
+      <Route path="/users/:username" element={<RouteErrorBoundary><UserProfile /></RouteErrorBoundary>} />
       <Route path="/quiz" element={<RouteErrorBoundary><Quiz /></RouteErrorBoundary>} />
       <Route path="/start" element={<RouteErrorBoundary><Start /></RouteErrorBoundary>} />
       <Route path="/messages" element={<RouteErrorBoundary><Messages /></RouteErrorBoundary>} />
